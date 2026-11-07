@@ -1,4 +1,4 @@
-# MemOps SRE — Autonomous Memory-Augmented Site Reliability Engineering
+**I locked in with my gf**
 
 > **HackwithHyderabad 3.0** | AI Agents & Infrastructure Track  
 > Persistent Historical Incident Memory (Hindsight) + Sub-Second Log Parsing (Groq) + Deep Causal Reasoning (Claude 3.5 Sonnet) + Interactive 3D Topology (Three.js)
