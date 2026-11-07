@@ -48,8 +48,8 @@
       }
     },
     "confidence_score": 0.99,
-    "recall_count": 7,
-    "last_recalled_at": "2026-11-07T11:25:56.675811Z"
+    "recall_count": 8,
+    "last_recalled_at": "2026-11-07T13:05:56.500457Z"
   },
   "mem-nov02-order-service-oom": {
     "incident_id": "mem-nov02-order-service-oom",
