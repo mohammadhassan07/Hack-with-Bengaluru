@@ -1,0 +1,140 @@
+{
+  "mem-oct12-postgres-conn-exhaust": {
+    "incident_id": "mem-oct12-postgres-conn-exhaust",
+    "timestamp": "2026-10-12T14:22:10Z",
+    "title": "PostgreSQL Connection Pool Exhaustion in Staging (Oct 12)",
+    "service_name": "postgres-db",
+    "fingerprint": {
+      "service_name": "postgres-db",
+      "error_class": "OperationalError",
+      "root_exception": "FATAL: remaining connection slots are reserved for non-replication superuser connections",
+      "call_stack_hash": "impl.py:get:order_service.py:create_order:database.py:db_session:QueuePool:OperationalError:FATAL_CONN_SLOTS",
+      "normalized_signature": "POSTGRES-DB_PSYCOPG2_OPERATIONALERROR_FATAL_REMAININ",
+      "config_snapshot": {
+        "max_connections": 20,
+        "pool_size": 5,
+        "max_overflow": 0,
+        "pool_timeout": 10
+      },
+      "env_metrics": {
+        "active_conns": 20,
+        "waiting_threads": 48
+      }
+    },
+    "embedding": null,
+    "natural_language_summary": "High concurrency test depleted SQLAlchemy connection pool without queue buffers, causing cascading 500s across order-service.",
+    "root_cause_analysis": "Default SQLAlchemy QueuePool had max_overflow=0 and pool_size=5 with a 10s timeout. When burst traffic arrived, all connection handles locked waiting for PostgreSQL.",
+    "remediation": {
+      "action_type": "config_patch",
+      "target_service": "postgres-db",
+      "target_file": "config/database.py",
+      "diff_patch": "--- a/config/database.py\n+++ b/config/database.py\n@@ -14,3 +14,5 @@\n-    pool_size=5,\n-    max_overflow=0,\n-    pool_timeout=10,\n+    pool_size=20,\n+    max_overflow=30,\n+    pool_timeout=30,\n+    pool_recycle=1800,\n",
+      "command": null,
+      "pr_reference": "PR #402",
+      "runbook_summary": "Apply connection pool limits and overflow buffers (PR #402). Set pool_size=20, max_overflow=30, pool_timeout=30s."
+    },
+    "outcome": {
+      "resolved": true,
+      "verify_duration_seconds": 3.2,
+      "health_check_endpoints": [
+        "/health",
+        "/api/v1/orders/health"
+      ],
+      "human_approved": true,
+      "verified_at": null,
+      "metrics_delta": {
+        "connection_pool_saturation": "-78%",
+        "p99_latency_ms": "-340ms"
+      }
+    },
+    "confidence_score": 0.99,
+    "recall_count": 7,
+    "last_recalled_at": "2026-11-07T11:25:56.675811Z"
+  },
+  "mem-nov02-order-service-oom": {
+    "incident_id": "mem-nov02-order-service-oom",
+    "timestamp": "2026-11-02T09:15:45Z",
+    "title": "Order Service Container OOM Kill (Exit 137)",
+    "service_name": "order-service",
+    "fingerprint": {
+      "service_name": "order-service",
+      "error_class": "ContainerOOMKilled",
+      "root_exception": "Process out of memory: heap allocation failed / Docker killed with status 137",
+      "call_stack_hash": "docker.daemon.oom:order_service.worker.process_batch",
+      "normalized_signature": "DOCKER_CONTAINER_OOM_EXIT_137",
+      "config_snapshot": {
+        "mem_limit": "512M",
+        "batch_chunk_size": 10000
+      },
+      "env_metrics": {
+        "memory_usage_pct": 100.0,
+        "swap_pct": 98.4
+      }
+    },
+    "embedding": null,
+    "natural_language_summary": "Unbounded batch query in Order Service loaded 50,000 JSON records into heap memory at once, triggering Linux cgroup OOM killer.",
+    "root_cause_analysis": "Batch order exporter lacked streaming or pagination, attempting to buffer massive customer payloads in a 512MB Docker container.",
+    "remediation": {
+      "action_type": "config_patch",
+      "target_service": "order-service",
+      "target_file": "services/order_exporter.py",
+      "diff_patch": "--- a/services/order_exporter.py\n+++ b/services/order_exporter.py\n@@ -28,2 +28,4 @@\n-    records = db.query(Order).all()\n-    return json.dumps([r.to_dict() for r in records])\n+    # Stream in chunks of 500 records to prevent memory spikes\n+    return StreamingResponse(stream_order_chunks(chunk_size=500), media_type=\"application/json\")\n",
+      "command": null,
+      "pr_reference": "PR #418",
+      "runbook_summary": "Enforce chunked streaming queries (chunk_size=500) and increase container memory limit from 512MB to 1024MB."
+    },
+    "outcome": {
+      "resolved": true,
+      "verify_duration_seconds": 4.1,
+      "health_check_endpoints": [
+        "/health"
+      ],
+      "human_approved": true,
+      "verified_at": null,
+      "metrics_delta": {}
+    },
+    "confidence_score": 0.91,
+    "recall_count": 1,
+    "last_recalled_at": null
+  },
+  "mem-novel-order-zlib-corrupt": {
+    "incident_id": "mem-novel-order-zlib-corrupt",
+    "timestamp": "2026-11-07T09:19:46.798875Z",
+    "title": "Order Service Zlib Decompression Fault",
+    "service_name": "order-service",
+    "fingerprint": {
+      "service_name": "order-service",
+      "error_class": "SystemFault",
+      "root_exception": "zlib.error: Error -3 while decompressing data: incorrect header check",
+      "call_stack_hash": "orders.py:serialize",
+      "normalized_signature": "ORDER-SERVICE_ZLIB_ERROR_ERROR_3_WHILE_DECOMPRESSING_D",
+      "config_snapshot": {},
+      "env_metrics": {}
+    },
+    "embedding": null,
+    "natural_language_summary": "Unhandled fault in order-service: zlib.error: Error -3 while decompressing data: incorrect header check. Service encountered unexpected lock timeout or unhandled upstream failure.",
+    "root_cause_analysis": "Unhandled fault in order-service: zlib.error: Error -3 while decompressing data: incorrect header check. Service encountered unexpected lock timeout or unhandled upstream failure.",
+    "remediation": {
+      "action_type": "container_restart",
+      "target_service": "order-service",
+      "target_file": "config/service.yaml",
+      "diff_patch": "--- a/config/service.yaml\n+++ b/config/service.yaml\n@@ -10,2 +10,4 @@\n-  socket_timeout: 0\n+  socket_timeout: 15s\n+  circuit_breaker_enabled: true\n",
+      "command": null,
+      "pr_reference": "PR #425",
+      "runbook_summary": "Enable circuit breaker and 15s upstream socket timeout to prevent worker starvation."
+    },
+    "outcome": {
+      "resolved": true,
+      "verify_duration_seconds": 2.4,
+      "health_check_endpoints": [
+        "/health"
+      ],
+      "human_approved": true,
+      "verified_at": "2026-11-07T09:19:46.798865Z",
+      "metrics_delta": {}
+    },
+    "confidence_score": 0.9,
+    "recall_count": 0,
+    "last_recalled_at": null
+  }
+}

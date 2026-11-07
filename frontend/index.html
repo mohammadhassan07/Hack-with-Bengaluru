@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MemOps SRE — Memory-Augmented Site Reliability Engineering</title>
+  <link rel="stylesheet" href="/static/styles.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- Three.js + OrbitControls -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+</head>
+<body class="dark-theme">
+  <!-- Topbar -->
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-logo">
+        <span class="logo-pulse"></span>
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
+        </svg>
+      </div>
+      <div>
+        <h1 class="brand-title">MemOps <span class="accent-text">SRE</span></h1>
+        <p class="brand-subtitle">Autonomous SRE with Persistent Hindsight Memory</p>
+      </div>
+    </div>
+
+    <!-- Live Telemetry Stats -->
+    <div class="telemetry-bar">
+      <div class="stat-pill">
+        <span class="stat-label">HINDSIGHT MEMORY</span>
+        <span class="stat-value text-emerald" id="stat-memories-count">2 Verified</span>
+      </div>
+      <div class="stat-pill">
+        <span class="stat-label">AVG CONFIDENCE</span>
+        <span class="stat-value text-cyan" id="stat-avg-confidence">93%</span>
+      </div>
+      <div class="stat-pill">
+        <span class="stat-label">MTTR SAVED</span>
+        <span class="stat-value text-amber" id="stat-mttr-saved">70 mins</span>
+      </div>
+      <div class="stat-pill">
+        <span class="stat-label">SYSTEM STATE</span>
+        <span class="status-indicator-badge healthy" id="system-status-badge">
+          <span class="pulse-dot"></span> OPERATIONAL
+        </span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Grid Workspace -->
+  <main class="main-layout">
+    
+    <!-- LEFT PANEL: Chaos & Nodes List -->
+    <aside class="panel left-panel">
+      <!-- Chaos Injection Console -->
+      <div class="card glass-card">
+        <div class="card-header">
+          <div class="card-title-wrap">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f43f5e" stroke-width="2">
+              <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+            </svg>
+            <h2>Chaos Injector</h2>
+          </div>
+          <span class="badge badge-purple">Simulated Target</span>
+        </div>
+        <p class="card-desc">Inject realistic production failures to trigger MemOps automated investigation and memory recall.</p>
+        
+        <div class="chaos-buttons">
+          <button class="btn btn-chaos" onclick="triggerChaos('postgres_pool_exhaustion')">
+            <span class="btn-icon">💥</span>
+            <div class="btn-text">
+              <strong>Postgres Pool Exhaustion</strong>
+              <small>Simulates Oct 12 connection leak (PR #402)</small>
+            </div>
+          </button>
+          
+          <button class="btn btn-chaos" onclick="triggerChaos('docker_oom_leak')">
+            <span class="btn-icon">⚡</span>
+            <div class="btn-text">
+              <strong>Order Svc Docker OOM</strong>
+              <small>Simulates heap blowup (Exit code 137)</small>
+            </div>
+          </button>
+
+          <button class="btn btn-chaos" onclick="triggerChaos('bad_staging_deploy')">
+            <span class="btn-icon">⚠️</span>
+            <div class="btn-text">
+              <strong>Bad Staging Deploy</strong>
+              <small>Simulates thread starvation deadlock</small>
+            </div>
+          </button>
+        </div>
+
+        <button class="btn btn-secondary btn-full mt-2" onclick="resetCluster()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
+          </svg>
+          Reset All Services to Healthy
+        </button>
+      </div>
+
+      <!-- Services Health List -->
+      <div class="card glass-card mt-3">
+        <div class="card-header">
+          <div class="card-title-wrap">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#06b6d4" stroke-width="2">
+              <rect x="2" y="2" width="20" height="8" rx="2" ry="2"/>
+              <rect x="2" y="14" width="20" height="8" rx="2" ry="2"/>
+              <line x1="6" y1="6" x2="6.01" y2="6"/>
+              <line x1="6" y1="18" x2="6.01" y2="18"/>
+            </svg>
+            <h2>Microservice Mesh</h2>
+          </div>
+          <span class="badge" id="node-count-badge">6 Nodes</span>
+        </div>
+        <div class="services-list" id="services-list">
+          <!-- Populated by JavaScript -->
+        </div>
+      </div>
+    </aside>
+
+    <!-- CENTER: Three.js 3D Visualizer Canvas -->
+    <section class="center-stage">
+      <div class="canvas-overlay">
+        <div class="stage-header">
+          <div class="mesh-status-tag">
+            <span class="live-dot"></span> 3D Topology Mesh (Live)
+          </div>
+          <div class="legend">
+            <span class="legend-item"><span class="dot green"></span> Healthy</span>
+            <span class="legend-item"><span class="dot yellow"></span> Recovering</span>
+            <span class="legend-item"><span class="dot red"></span> Outage</span>
+            <span class="legend-item"><span class="dot gold"></span> Memory Recall</span>
+          </div>
+        </div>
+      </div>
+      
+      <!-- 3D Canvas Container -->
+      <div id="three-container"></div>
+      
+      <!-- Live Agent Stream Log Terminal -->
+      <div class="terminal-drawer">
+        <div class="terminal-header">
+          <div class="term-title">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="4 17 10 11 4 5"/>
+              <line x1="12" y1="19" x2="20" y2="19"/>
+            </svg>
+            Agent Autonomous Reasoning Stream (Groq + Claude + Hindsight)
+          </div>
+          <button class="btn-clear" onclick="clearTerminal()">Clear</button>
+        </div>
+        <div class="terminal-body" id="terminal-logs">
+          <div class="log-line info">[SYS] MemOps SRE Engine online. Connected to Hindsight Memory Cloud.</div>
+          <div class="log-line info">[SYS] 3D Microservice topology initialized with 6 active nodes.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- RIGHT PANEL: Incident Triage & Human Approval Gate -->
+    <aside class="panel right-panel">
+      <!-- Active Incident Card -->
+      <div class="card glass-card incident-card" id="incident-box">
+        <div class="card-header">
+          <div class="card-title-wrap">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2">
+              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+              <line x1="12" y1="9" x2="12" y2="13"/>
+              <line x1="12" y1="17" x2="12.01" y2="17"/>
+            </svg>
+            <h2>Incident Resolution Gate</h2>
+          </div>
+          <span class="badge" id="incident-status-tag">IDLE</span>
+        </div>
+
+        <div id="no-incident-msg" class="empty-state">
+          <div class="empty-icon">🛡️</div>
+          <p>No active critical incidents.</p>
+          <small>Trigger a chaos scenario from the left panel to observe Hindsight Memory Recall in action.</small>
+        </div>
+
+        <div id="active-incident-details" class="incident-content hidden">
+          <!-- Memory Recall Banner -->
+          <div id="memory-recall-banner" class="memory-recall-box">
+            <div class="recall-header">
+              <span class="recall-icon">🎯</span>
+              <strong>HINDSIGHT MEMORY HIT</strong>
+              <span class="confidence-pill" id="recall-confidence">94% Confidence</span>
+            </div>
+            <p id="recall-summary" class="recall-body"></p>
+          </div>
+
+          <div class="incident-meta">
+            <div><span class="meta-label">Service:</span> <span id="inc-service" class="meta-val highlight"></span></div>
+            <div><span class="meta-label">Root Fault:</span> <span id="inc-fault" class="meta-val"></span></div>
+          </div>
+
+          <div class="rca-box">
+            <span class="rca-title">Root Cause Diagnosis:</span>
+            <p id="inc-rca" class="rca-text"></p>
+          </div>
+
+          <!-- Unified Diff Preview -->
+          <div class="diff-container">
+            <div class="diff-header">
+              <span>Proposed Hotfix Diff</span>
+              <span class="file-tag" id="diff-file">config/database.py</span>
+            </div>
+            <pre class="diff-code" id="diff-content"></pre>
+          </div>
+
+          <!-- Human-in-the-Loop Approval Action -->
+          <div class="approval-actions">
+            <button class="btn btn-primary btn-full" id="btn-approve" onclick="approveIncident()">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="20 6 9 17 4 12"/>
+              </svg>
+              Approve & Deploy Hotfix
+            </button>
+            <button class="btn btn-outline btn-full mt-1" onclick="rejectIncident()">
+              Dismiss / Reject Patch
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Historical Hindsight Memory Drawer -->
+      <div class="card glass-card mt-3">
+        <div class="card-header">
+          <div class="card-title-wrap">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/>
+              <polyline points="12 6 12 12 14 14"/>
+            </svg>
+            <h2>Hindsight Retained Memory</h2>
+          </div>
+          <span class="badge badge-green">Persistent</span>
+        </div>
+        <p class="card-desc">Verified runbooks and past outage solutions stored in memory graph.</p>
+        <div class="memory-feed" id="memory-feed">
+          <!-- Populated by JavaScript -->
+        </div>
+      </div>
+    </aside>
+
+  </main>
+
+  <script src="/static/visualizer3d.js"></script>
+  <script src="/static/app.js"></script>
+</body>
+</html>
