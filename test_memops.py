@@ -71,6 +71,11 @@ def run_verification_suite():
 
     # 4. Test Incident 2: Novel Error (Custom Data Corruption Failure)
     print("\n[5] Ingesting Incident 2: Novel Unseen System Fault...")
+    # Ensure test idempotency by clearing any previous test retention
+    if "mem-novel-order-zlib-corrupt" in memory_store.records:
+        del memory_store.records["mem-novel-order-zlib-corrupt"]
+        memory_store._save()
+
     novel_log = """[2026-11-07 14:45:00] CRITICAL [order-service] [custom.engine]
 Traceback (most recent call last):
   File "/app/services/orders.py", line 210, in serialize
@@ -126,6 +131,11 @@ zlib.error: Error -3 while decompressing data: incorrect header check
     print("=" * 65)
     print("[SUCCESS] ALL TESTS PASSED! MemOps SRE Engine is 100% verified.")
     print("=" * 65)
+
+    # Clean up test novel memory to preserve baseline for runtime
+    if "mem-novel-order-zlib-corrupt" in memory_store.records:
+        del memory_store.records["mem-novel-order-zlib-corrupt"]
+        memory_store._save()
 
 
 if __name__ == "__main__":

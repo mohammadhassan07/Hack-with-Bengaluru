@@ -48,8 +48,8 @@
       }
     },
     "confidence_score": 0.99,
-    "recall_count": 8,
-    "last_recalled_at": "2026-11-07T13:05:56.500457Z"
+    "recall_count": 10,
+    "last_recalled_at": "2026-11-07T14:24:45.553842Z"
   },
   "mem-nov02-order-service-oom": {
     "incident_id": "mem-nov02-order-service-oom",
@@ -95,46 +95,6 @@
     },
     "confidence_score": 0.91,
     "recall_count": 1,
-    "last_recalled_at": null
-  },
-  "mem-novel-order-zlib-corrupt": {
-    "incident_id": "mem-novel-order-zlib-corrupt",
-    "timestamp": "2026-11-07T09:19:46.798875Z",
-    "title": "Order Service Zlib Decompression Fault",
-    "service_name": "order-service",
-    "fingerprint": {
-      "service_name": "order-service",
-      "error_class": "SystemFault",
-      "root_exception": "zlib.error: Error -3 while decompressing data: incorrect header check",
-      "call_stack_hash": "orders.py:serialize",
-      "normalized_signature": "ORDER-SERVICE_ZLIB_ERROR_ERROR_3_WHILE_DECOMPRESSING_D",
-      "config_snapshot": {},
-      "env_metrics": {}
-    },
-    "embedding": null,
-    "natural_language_summary": "Unhandled fault in order-service: zlib.error: Error -3 while decompressing data: incorrect header check. Service encountered unexpected lock timeout or unhandled upstream failure.",
-    "root_cause_analysis": "Unhandled fault in order-service: zlib.error: Error -3 while decompressing data: incorrect header check. Service encountered unexpected lock timeout or unhandled upstream failure.",
-    "remediation": {
-      "action_type": "container_restart",
-      "target_service": "order-service",
-      "target_file": "config/service.yaml",
-      "diff_patch": "--- a/config/service.yaml\n+++ b/config/service.yaml\n@@ -10,2 +10,4 @@\n-  socket_timeout: 0\n+  socket_timeout: 15s\n+  circuit_breaker_enabled: true\n",
-      "command": null,
-      "pr_reference": "PR #425",
-      "runbook_summary": "Enable circuit breaker and 15s upstream socket timeout to prevent worker starvation."
-    },
-    "outcome": {
-      "resolved": true,
-      "verify_duration_seconds": 2.4,
-      "health_check_endpoints": [
-        "/health"
-      ],
-      "human_approved": true,
-      "verified_at": "2026-11-07T09:19:46.798865Z",
-      "metrics_delta": {}
-    },
-    "confidence_score": 0.9,
-    "recall_count": 0,
     "last_recalled_at": null
   }
 }
