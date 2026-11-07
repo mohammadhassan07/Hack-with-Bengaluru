@@ -1,0 +1,528 @@
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>MemOps - Reliability Operations</title>
+<!-- Tailwind CSS CDN with forms & typography -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+            mono: ['JetBrains Mono', 'Fira Code', 'Menlo', 'monospace'],
+          },
+          colors: {
+            brand: {
+              50: '#eef2ff',
+              100: '#e0e7ff',
+              500: '#3b82f6',
+              600: '#2563eb',
+              700: '#1d4ed8',
+            }
+          }
+        }
+      }
+    }
+  </script>
+<!-- Google Fonts: Inter & JetBrains Mono -->
+<link href="https://fonts.googleapis.com" rel="preconnect">
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<!-- Lucide Icons -->
+<script src="https://unpkg.com/lucide@latest"></script>
+<style>
+    /* Clean custom scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(148, 163, 184, 0.4);
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(148, 163, 184, 0.7);
+    }
+  </style>
+</head>
+<body class="bg-slate-50 dark:bg-[#0b0f19] text-slate-800 dark:text-slate-100 font-sans antialiased min-h-screen flex flex-col transition-colors duration-200">
+<!-- TOP HEADER -->
+<header class="border-b border-slate-200/90 dark:border-slate-800/90 bg-white/95 dark:bg-[#0f1422]/95 backdrop-blur sticky top-0 z-40">
+<div class="max-w-7xl mx-auto px-6 lg:px-8 h-18 py-3.5 flex items-center justify-between">
+<!-- Logo + Main Nav -->
+<div class="flex items-center gap-10">
+<a class="flex items-center gap-3 group" href="#">
+<div class="h-10 w-10 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-sm shadow-blue-500/20 group-hover:bg-blue-700 transition">
+<i class="w-5 h-5" data-lucide="shield-check"></i>
+</div>
+<div>
+<div class="flex items-center gap-2">
+<span class="font-bold text-slate-900 dark:text-white tracking-tight text-lg">MemOps</span>
+<span class="text-[11px] font-semibold tracking-wider uppercase px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200/60 dark:border-blue-800/60">Pro</span>
+</div>
+<p class="text-xs text-slate-500 dark:text-slate-400">Reliability Operations</p>
+</div>
+</a>
+<!-- Navigation Links -->
+<nav class="hidden md:flex items-center gap-1 text-sm font-medium">
+<a class="px-3.5 py-2 rounded-lg bg-slate-100 dark:bg-slate-800/80 text-blue-600 dark:text-blue-400 font-semibold" href="#">Overview</a>
+<a class="px-3.5 py-2 rounded-lg text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/50 transition" href="#">Incidents</a>
+<a class="px-3.5 py-2 rounded-lg text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/50 transition" href="#">Services</a>
+<a class="px-3.5 py-2 rounded-lg text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/50 transition" href="#">Settings</a>
+</nav>
+</div>
+<!-- Right Header Actions & Indicators -->
+<div class="flex items-center gap-3 sm:gap-4">
+<!-- Live System Status Pill -->
+<div class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-900/60 text-rose-700 dark:text-rose-300 text-xs font-medium transition-all duration-300" id="header-status-pill">
+<span class="w-2 h-2 rounded-full bg-rose-500 animate-pulse" id="header-status-dot"></span>
+<span id="header-status-text" class="">1 Active Incident</span>
+</div>
+<!-- Metric Highlight Badge -->
+<div class="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/60 text-xs text-slate-600 dark:text-slate-300">
+<i class="w-3.5 h-3.5 text-blue-500" data-lucide="clock-arrow-down"></i>
+<span class="">Downtime Prevented: <strong class="font-semibold text-slate-900 dark:text-white">5h 15m</strong></span>
+</div>
+<!-- Theme Toggle (Functional Light / Dark) -->
+<button aria-label="Toggle Dark and Light Mode" class="p-2.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition shadow-sm" id="theme-toggle" title="Toggle theme">
+<i class="w-4 h-4 hidden dark:inline-block" data-lucide="moon" id="theme-moon-icon"></i>
+<i class="w-4 h-4 inline-block dark:hidden text-amber-500" data-lucide="sun" id="theme-sun-icon"></i>
+</button>
+<!-- Notification Bell -->
+<button class="relative p-2.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition shadow-sm" title="Notifications">
+<i class="w-4 h-4" data-lucide="bell"></i>
+<span class="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-rose-500"></span>
+</button>
+<!-- User Profile Avatar -->
+<div class="h-9 w-9 rounded-full bg-slate-200 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 flex items-center justify-center font-medium text-xs text-slate-700 dark:text-slate-300 cursor-pointer">
+          SR
+        </div>
+</div>
+</div>
+</header>
+<!-- MAIN WRAPPER -->
+<main class="flex-1 max-w-7xl w-full mx-auto px-6 lg:px-8 py-8 space-y-8">
+<!-- GLOBAL RESOLUTION SUCCESS TOAST / BANNER (Hidden by default, triggered by Deploy Fix) -->
+<div class="hidden rounded-xl border border-emerald-300 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/40 p-5 flex items-start justify-between gap-4 transition-all duration-300" id="success-banner">
+<div class="flex items-start gap-3.5">
+<div class="p-1.5 rounded-lg bg-emerald-600 text-white mt-0.5 shadow-sm">
+<i class="w-4 h-4" data-lucide="check"></i>
+</div>
+<div>
+<h3 class="text-sm font-semibold text-emerald-900 dark:text-emerald-200">Fix deployed successfully!</h3>
+<p class="text-xs text-emerald-700 dark:text-emerald-300/90 mt-0.5">Payment Service socket timeout updated to 15s with circuit breaker enabled. All 6 monitored services are now operating normally.</p>
+</div>
+</div>
+<button class="text-emerald-600 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-200 text-xs font-semibold px-2 py-1 rounded" onclick="dismissSuccessBanner()">
+        Dismiss
+      </button>
+</div>
+<!-- 1. TOP SUMMARY METRICS (4 Spacious KPI Cards) -->
+<section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+<!-- Card 1: System Health -->
+<div class="bg-white dark:bg-[#111726] rounded-xl border border-slate-200/90 dark:border-slate-800/90 p-6 shadow-sm flex flex-col justify-between">
+<div class="flex items-center justify-between text-slate-500 dark:text-slate-400">
+<span class="text-xs font-semibold uppercase tracking-wider">System Health</span>
+<span class="p-2 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
+<i class="w-4 h-4" data-lucide="activity"></i>
+</span>
+</div>
+<div class="mt-4">
+<div class="text-2xl font-bold text-amber-600 dark:text-amber-400 tracking-tight" id="kpi-health-value">Degraded</div>
+<div class="flex items-center gap-1.5 mt-1.5 text-xs text-slate-500 dark:text-slate-400">
+<span class="text-rose-500 font-semibold">1 service</span> with timeout errors
+          </div>
+</div>
+</div>
+<!-- Card 2: Active Alerts -->
+<div class="bg-white dark:bg-[#111726] rounded-xl border border-slate-200/90 dark:border-slate-800/90 p-6 shadow-sm flex flex-col justify-between">
+<div class="flex items-center justify-between text-slate-500 dark:text-slate-400">
+<span class="text-xs font-semibold uppercase tracking-wider">Active Alerts</span>
+<span class="p-2 rounded-lg bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400">
+<i class="w-4 h-4" data-lucide="alert-circle"></i>
+</span>
+</div>
+<div class="mt-4">
+<div class="text-2xl font-bold text-slate-900 dark:text-white tracking-tight" id="kpi-alerts-value">1 Active</div>
+<div class="flex items-center gap-1.5 mt-1.5 text-xs text-slate-500 dark:text-slate-400">
+<span class="">Critical priority: Payment Gateway</span>
+</div>
+</div>
+</div>
+<!-- Card 3: Resolved Today -->
+<div class="bg-white dark:bg-[#111726] rounded-xl border border-slate-200/90 dark:border-slate-800/90 p-6 shadow-sm flex flex-col justify-between">
+<div class="flex items-center justify-between text-slate-500 dark:text-slate-400">
+<span class="text-xs font-semibold uppercase tracking-wider">Resolved Today</span>
+<span class="p-2 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400">
+<i class="w-4 h-4" data-lucide="check-circle-2"></i>
+</span>
+</div>
+<div class="mt-4">
+<div class="text-2xl font-bold text-slate-900 dark:text-white tracking-tight" id="kpi-resolved-value">4 Incidents</div>
+<div class="flex items-center gap-1.5 mt-1.5 text-xs text-emerald-600 dark:text-emerald-400 font-medium">
+<span class="">Average time to fix: 3.2 mins</span>
+</div>
+</div>
+</div>
+<!-- Card 4: Auto-Remediation Rate -->
+<div class="bg-white dark:bg-[#111726] rounded-xl border border-slate-200/90 dark:border-slate-800/90 p-6 shadow-sm flex flex-col justify-between">
+<div class="flex items-center justify-between text-slate-500 dark:text-slate-400">
+<span class="text-xs font-semibold uppercase tracking-wider">Remediation Rate</span>
+<span class="p-2 rounded-lg bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400">
+<i class="w-4 h-4" data-lucide="zap"></i>
+</span>
+</div>
+<div class="mt-4">
+<div class="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">96.8%</div>
+<div class="flex items-center gap-1.5 mt-1.5 text-xs text-slate-500 dark:text-slate-400">
+<span class="text-blue-600 dark:text-blue-400 font-semibold">+4.2%</span> vs last 30-day baseline
+          </div>
+</div>
+</div>
+</section>
+<!-- 2. MAIN WORKSPACE GRID -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+<!-- PRIMARY LEFT COLUMN (Spacious Incident Resolution Card) -->
+<div class="lg:col-span-7 xl:col-span-8 space-y-6">
+<div class="bg-white dark:bg-[#111726] rounded-2xl border border-slate-200/90 dark:border-slate-800/90 shadow-sm overflow-hidden">
+<!-- Card Header -->
+<div class="p-6 sm:p-8 border-b border-slate-100 dark:border-slate-800/80 bg-slate-50/50 dark:bg-slate-900/30">
+<div class="flex flex-wrap items-center justify-between gap-4">
+<div class="flex items-center gap-3">
+<span class="px-3 py-1 rounded-full text-xs font-semibold bg-rose-100 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-900" id="incident-pill">
+                  Payment Service Incident
+                </span>
+<span class="text-xs text-slate-400 dark:text-slate-500">Detected 4 minutes ago</span>
+</div>
+<div class="flex items-center gap-2"><span class="text-xs text-slate-500 dark:text-slate-400 font-medium">Severity:</span><span class="text-xs font-semibold px-2 py-0.5 rounded bg-rose-100 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-900">P1 - Critical</span><span class="text-xs text-slate-300 dark:text-slate-700">•</span><span class="text-xs text-slate-500 dark:text-slate-400 font-medium">Impact: Web Storefront</span></div>
+</div>
+<h1 class="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white mt-3" id="incident-title">
+              Checkout requests are failing due to a gateway connection timeout
+            </h1>
+<p class="text-sm text-slate-600 dark:text-slate-400 mt-2 leading-relaxed" id="incident-desc">
+              Customers attempting checkout on the web storefront are receiving 504 Gateway Timeout responses. Background payment workers have accumulated in wait states.
+            </p>
+</div>
+<!-- Card Content Body -->
+<div class="p-6 sm:p-8 space-y-7">
+<!-- Section: Plain-English Automated Diagnosis -->
+<div><div class="flex items-center justify-between mb-3"><div class="flex items-center gap-2"><div class="p-1 rounded-md bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-400"><i class="w-4 h-4" data-lucide="search-code"></i></div><h2 class="text-xs uppercase tracking-wider font-semibold text-slate-900 dark:text-slate-200">Root Cause Analysis (SRE Incident Report #1042)</h2></div><span class="text-xs text-slate-400 dark:text-slate-500 font-medium">Identified via Gateway Telemetry</span></div><div class="p-4 rounded-xl bg-slate-50/70 dark:bg-[#0c1220] border border-slate-200/80 dark:border-slate-800 text-sm text-slate-700 dark:text-slate-300 leading-relaxed space-y-2"><p class="">The payment service stopped handling inbound requests because client timeout was set to <code class="px-1.5 py-0.5 rounded bg-slate-200/60 dark:bg-slate-800 font-mono text-xs text-slate-900 dark:text-slate-100">0</code> (unbounded), accumulating socket connections during high concurrency.</p><div class="flex items-center gap-2 pt-1 text-xs text-slate-500 dark:text-slate-400 font-medium border-t border-slate-200/60 dark:border-slate-800/80 mt-2"><i class="w-3.5 h-3.5 text-blue-500" data-lucide="file-text"></i><span class="">Standard Runbook Remediation: Apply 15s socket timeout threshold and trip circuit breaker on failure spikes.</span></div></div></div>
+<!-- Section: Proposed Code Fix Preview -->
+<div>
+<div class="flex items-center justify-between mb-3">
+<div class="flex items-center gap-2">
+<div class="p-1 rounded-md bg-emerald-50 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400">
+<i class="w-4 h-4" data-lucide="code-2"></i>
+</div>
+<h2 class="text-sm uppercase tracking-wider font-semibold text-slate-900 dark:text-slate-200">Configuration Hotfix (Pull Request #412)</h2>
+</div>
+<span class="text-xs font-mono text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-md border border-slate-200 dark:border-slate-700">
+                  config/service.yaml
+                </span>
+</div>
+<!-- Diff Box -->
+<div class="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-900 text-slate-200 overflow-hidden font-mono text-xs sm:text-sm shadow-inner">
+<!-- Bar -->
+<div class="bg-slate-800/80 px-4 py-2 text-xs text-slate-400 flex items-center justify-between border-b border-slate-700/60">
+<span class="">Unified Diff Preview</span>
+<span class="text-slate-500">Lines 10-16</span>
+</div>
+<!-- Diff Code -->
+<div class="p-4 space-y-1 overflow-x-auto">
+<div class="text-slate-400 pl-4">  service: payment</div>
+<div class="text-slate-400 pl-4">  timeout_policy:</div>
+<!-- Line Removed -->
+<div class="flex items-center bg-rose-950/60 text-rose-300 px-3 py-1 rounded border-l-4 border-rose-500 -mx-1">
+<span class="select-none text-rose-400 font-bold mr-3">-</span>
+<span class="">socket_timeout: 0</span>
+</div>
+<!-- Lines Added -->
+<div class="flex items-center bg-emerald-950/60 text-emerald-300 px-3 py-1 rounded border-l-4 border-emerald-500 -mx-1">
+<span class="select-none text-emerald-400 font-bold mr-3">+</span>
+<span class="">socket_timeout: 15s</span>
+</div>
+<div class="flex items-center bg-emerald-950/60 text-emerald-300 px-3 py-1 rounded border-l-4 border-emerald-500 -mx-1">
+<span class="select-none text-emerald-400 font-bold mr-3">+</span>
+<span class="">circuit_breaker_enabled: true</span>
+</div>
+<div class="text-slate-400 pl-4">  max_retries: 3</div>
+</div>
+</div>
+</div>
+<!-- Action Buttons -->
+<div class="pt-3 flex flex-col sm:flex-row items-center gap-3.5" id="incident-action-panel"><button class="w-full sm:w-auto flex-1 py-3.5 px-6 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm transition shadow-sm shadow-blue-600/30 flex items-center justify-center gap-2 cursor-pointer" id="deploy-fix-btn" onclick="deployRecommendedFix()"><i class="w-4 h-4" data-lucide="git-merge"></i><span class="">Deploy Patch to Production</span></button><button class="w-full sm:w-auto py-3.5 px-5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 font-medium text-sm transition flex items-center justify-center gap-2 cursor-pointer" id="ignore-fix-btn" onclick="ignoreIncident()"><i class="w-4 h-4 text-slate-400" data-lucide="bell-off"></i><span class="">Acknowledge &amp; Snooze</span></button></div>
+<!-- Healthy State Fallback (Hidden initially) -->
+<div class="hidden p-6 rounded-xl bg-slate-50 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800 text-center space-y-3" id="healthy-state-box">
+<div class="inline-flex p-3 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400">
+<i class="w-6 h-6" data-lucide="shield-check"></i>
+</div>
+<h3 class="text-base font-semibold text-slate-900 dark:text-white">All Systems Operational</h3>
+<p class="text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto">No outstanding anomalies or alerts requiring operator attention. All background health checks are green.</p>
+<button class="mt-2 text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline" onclick="triggerTimeoutScenario()">
+                Simulate a new issue to test automated remediation →
+              </button>
+</div>
+</div>
+</div>
+</div>
+<!-- SECONDARY RIGHT COLUMN (Monitored Services, Test Tools, Recent Solutions) -->
+<div class="lg:col-span-5 xl:col-span-4 space-y-6">
+<!-- 1. Monitored Services -->
+<div class="bg-white dark:bg-[#111726] rounded-2xl border border-slate-200/90 dark:border-slate-800/90 p-6 shadow-sm">
+<div class="flex items-center justify-between mb-4">
+<h2 class="text-sm uppercase tracking-wider font-semibold text-slate-900 dark:text-slate-200 flex items-center gap-2">
+<i class="w-4 h-4 text-blue-500" data-lucide="server"></i>
+              Monitored Services
+            </h2>
+<span class="text-xs text-slate-500 dark:text-slate-400 font-mono">6 of 6 online</span>
+</div>
+<div class="divide-y divide-slate-100 dark:divide-slate-800/80">
+<!-- Service 1 -->
+<div class="py-3 flex items-center justify-between text-sm">
+<div class="flex items-center gap-3">
+<span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+<span class="font-medium text-slate-800 dark:text-slate-200">API Gateway</span>
+</div>
+<div class="flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400 font-mono">
+<span class="">12ms</span>
+<span class="text-emerald-600 dark:text-emerald-400 font-medium">Healthy</span>
+</div>
+</div>
+<!-- Service 2 -->
+<div class="py-3 flex items-center justify-between text-sm">
+<div class="flex items-center gap-3">
+<span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+<span class="font-medium text-slate-800 dark:text-slate-200">Authentication</span>
+</div>
+<div class="flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400 font-mono">
+<span class="">18ms</span>
+<span class="text-emerald-600 dark:text-emerald-400 font-medium">Healthy</span>
+</div>
+</div>
+<!-- Service 3 (Faulty) -->
+<div class="py-3 flex items-center justify-between text-sm bg-rose-50/50 dark:bg-rose-950/20 -mx-2 px-2 rounded-lg transition-all" id="service-payment-row">
+<div class="flex items-center gap-3">
+<span class="w-2.5 h-2.5 rounded-full bg-rose-500 animate-ping" id="service-payment-dot"></span>
+<span class="font-semibold text-rose-900 dark:text-rose-200">Checkout &amp; Payments</span>
+</div>
+<div class="flex items-center gap-3 text-xs font-mono">
+<span class="text-rose-600 dark:text-rose-400 font-bold" id="service-payment-latency">Timeout</span>
+<span class="px-2 py-0.5 rounded bg-rose-100 dark:bg-rose-900/60 text-rose-700 dark:text-rose-300 font-semibold" id="service-payment-status">Incident</span>
+</div>
+</div>
+<!-- Service 4 -->
+<div class="py-3 flex items-center justify-between text-sm">
+<div class="flex items-center gap-3">
+<span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+<span class="font-medium text-slate-800 dark:text-slate-200">Order Processing</span>
+</div>
+<div class="flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400 font-mono">
+<span class="">45ms</span>
+<span class="text-emerald-600 dark:text-emerald-400 font-medium">Healthy</span>
+</div>
+</div>
+<!-- Service 5 -->
+<div class="py-3 flex items-center justify-between text-sm">
+<div class="flex items-center gap-3">
+<span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+<span class="font-medium text-slate-800 dark:text-slate-200">Primary Database</span>
+</div>
+<div class="flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400 font-mono">
+<span class="">8ms</span>
+<span class="text-emerald-600 dark:text-emerald-400 font-medium">Healthy</span>
+</div>
+</div>
+<!-- Service 6 -->
+<div class="py-3 flex items-center justify-between text-sm">
+<div class="flex items-center gap-3">
+<span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+<span class="font-medium text-slate-800 dark:text-slate-200">Worker Queue</span>
+</div>
+<div class="flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400 font-mono">
+<span class="">5ms</span>
+<span class="text-emerald-600 dark:text-emerald-400 font-medium">Healthy</span>
+</div>
+</div>
+</div>
+</div>
+<!-- 2. Quick Simulation / Test Tools -->
+<div class="bg-white dark:bg-[#111726] rounded-2xl border border-slate-200/90 dark:border-slate-800/90 p-6 shadow-sm"><div class="flex items-center justify-between mb-3"><h2 class="text-sm uppercase tracking-wider font-semibold text-slate-900 dark:text-slate-200 flex items-center gap-2"><i class="w-4 h-4 text-purple-500" data-lucide="flask-conical"></i>Diagnostic Staging Scenarios</h2><span class="text-xs text-slate-400 font-mono">Staging Env</span></div><p class="text-xs text-slate-500 dark:text-slate-400 mb-4 leading-relaxed">Simulate cluster anomalies in isolated sandbox to validate timeout policies and load shedding.</p><div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5"><button class="px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-blue-50 dark:hover:bg-blue-950 hover:border-blue-200 dark:hover:border-blue-900 hover:text-blue-600 dark:hover:text-blue-400 transition text-center" onclick="triggerTimeoutScenario()">Simulate Timeout Drift</button><button class="px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-amber-50 dark:hover:bg-amber-950 hover:border-amber-200 dark:hover:border-amber-900 hover:text-amber-600 dark:hover:text-amber-400 transition text-center" onclick="triggerMemoryScenario()">Trigger Memory Surge</button><button class="px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-emerald-50 dark:hover:bg-emerald-950 hover:border-emerald-200 dark:hover:border-emerald-900 hover:text-emerald-600 dark:hover:text-emerald-400 transition text-center" onclick="resetAllHealthy()">Restore All Services</button></div></div>
+<!-- 3. Recent Solutions History -->
+<div class="bg-white dark:bg-[#111726] rounded-2xl border border-slate-200/90 dark:border-slate-800/90 p-6 shadow-sm">
+<div class="flex items-center justify-between mb-4">
+<h2 class="text-sm uppercase tracking-wider font-semibold text-slate-900 dark:text-slate-200 flex items-center gap-2">
+<i class="w-4 h-4 text-emerald-500" data-lucide="history"></i>
+              Recent Solutions History
+            </h2>
+<a class="text-xs text-blue-600 dark:text-blue-400 hover:underline" href="#">View all</a>
+</div>
+<div class="space-y-3">
+<!-- Historical Card 1 -->
+<div class="p-3.5 rounded-xl border border-slate-100 dark:border-slate-800/90 bg-slate-50/70 dark:bg-slate-900/40 hover:bg-slate-50 dark:hover:bg-slate-900 transition flex items-start gap-3">
+<div class="p-1 rounded bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 mt-0.5">
+<i class="w-3.5 h-3.5" data-lucide="check"></i>
+</div>
+<div class="min-w-0 flex-1">
+<div class="flex items-center justify-between">
+<span class="text-xs font-semibold text-slate-900 dark:text-white">Database connection pool increased</span>
+<span class="text-[11px] text-slate-400">2h ago</span>
+</div>
+<p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Updated pool size to 25 connections in response to traffic surge.</p>
+</div>
+</div>
+<!-- Historical Card 2 -->
+<div class="p-3.5 rounded-xl border border-slate-100 dark:border-slate-800/90 bg-slate-50/70 dark:bg-slate-900/40 hover:bg-slate-50 dark:hover:bg-slate-900 transition flex items-start gap-3">
+<div class="p-1 rounded bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 mt-0.5">
+<i class="w-3.5 h-3.5" data-lucide="check"></i>
+</div>
+<div class="min-w-0 flex-1">
+<div class="flex items-center justify-between">
+<span class="text-xs font-semibold text-slate-900 dark:text-white">Container memory limit adjusted</span>
+<span class="text-[11px] text-slate-400">Yesterday</span>
+</div>
+<p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Expanded order worker limits to 2GB to prevent peak OOM kills.</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- JAVASCRIPT: Functional Theme Toggle & Interactive State Management -->
+<script>
+    // 1. Interactive Theme Toggle (Supports system preference + toggle with instant UI update)
+    const themeToggleBtn = document.getElementById('theme-toggle');
+    
+    function applyTheme(isDark) {
+      if (isDark) {
+        document.documentElement.classList.add('dark');
+        localStorage.setItem('theme', 'dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+        localStorage.setItem('theme', 'light');
+      }
+      lucide.createIcons();
+    }
+
+    // Default to dark or saved preference
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+      applyTheme(true);
+    } else {
+      applyTheme(false);
+    }
+
+    themeToggleBtn.addEventListener('click', () => {
+      const isCurrentlyDark = document.documentElement.classList.contains('dark');
+      applyTheme(!isCurrentlyDark);
+    });
+
+    // 2. Incident Resolution Interactions
+    const headerStatusPill = document.getElementById('header-status-pill');
+    const headerStatusDot = document.getElementById('header-status-dot');
+    const headerStatusText = document.getElementById('header-status-text');
+    const successBanner = document.getElementById('success-banner');
+    
+    const kpiHealthValue = document.getElementById('kpi-health-value');
+    const kpiAlertsValue = document.getElementById('kpi-alerts-value');
+    const kpiResolvedValue = document.getElementById('kpi-resolved-value');
+
+    const servicePaymentRow = document.getElementById('service-payment-row');
+    const servicePaymentDot = document.getElementById('service-payment-dot');
+    const servicePaymentLatency = document.getElementById('service-payment-latency');
+    const servicePaymentStatus = document.getElementById('service-payment-status');
+
+    const incidentActionPanel = document.getElementById('incident-action-panel');
+    const healthyStateBox = document.getElementById('healthy-state-box');
+    const incidentTitle = document.getElementById('incident-title');
+    const incidentDesc = document.getElementById('incident-desc');
+    const incidentPill = document.getElementById('incident-pill');
+
+    function deployRecommendedFix() {
+      // 1. Show success banner
+      successBanner.classList.remove('hidden');
+      
+      // 2. Update Header Status
+      headerStatusPill.className = "flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-900/60 text-emerald-700 dark:text-emerald-300 text-xs font-medium transition-all duration-300";
+      headerStatusDot.className = "w-2 h-2 rounded-full bg-emerald-500";
+      headerStatusText.textContent = "All Systems Healthy";
+
+      // 3. Update KPIs
+      kpiHealthValue.className = "text-2xl font-bold text-emerald-600 dark:text-emerald-400 tracking-tight";
+      kpiHealthValue.textContent = "100% Healthy";
+      kpiAlertsValue.textContent = "0 Active";
+      kpiResolvedValue.textContent = "5 Incidents";
+
+      // 4. Update Payment Service Row to Healthy
+      servicePaymentRow.className = "py-3 flex items-center justify-between text-sm -mx-2 px-2 rounded-lg transition-all";
+      servicePaymentDot.className = "w-2.5 h-2.5 rounded-full bg-emerald-500";
+      servicePaymentLatency.className = "text-slate-500 dark:text-slate-400 font-mono";
+      servicePaymentLatency.textContent = "22ms";
+      servicePaymentStatus.className = "text-emerald-600 dark:text-emerald-400 font-medium";
+      servicePaymentStatus.textContent = "Healthy";
+
+      // 5. Hide buttons & show healthy card
+      incidentActionPanel.classList.add('hidden');
+      healthyStateBox.classList.remove('hidden');
+
+      lucide.createIcons();
+    }
+
+    function dismissSuccessBanner() {
+      successBanner.classList.add('hidden');
+    }
+
+    function ignoreIncident() {
+      deployRecommendedFix();
+    }
+
+    function triggerTimeoutScenario() {
+      successBanner.classList.add('hidden');
+      headerStatusPill.className = "flex items-center gap-2 px-3 py-1.5 rounded-full bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-900/60 text-rose-700 dark:text-rose-300 text-xs font-medium transition-all duration-300";
+      headerStatusDot.className = "w-2 h-2 rounded-full bg-rose-500 animate-pulse";
+      headerStatusText.textContent = "1 Active Incident";
+
+      kpiHealthValue.className = "text-2xl font-bold text-amber-600 dark:text-amber-400 tracking-tight";
+      kpiHealthValue.textContent = "Degraded";
+      kpiAlertsValue.textContent = "1 Active";
+
+      servicePaymentRow.className = "py-3 flex items-center justify-between text-sm bg-rose-50/50 dark:bg-rose-950/20 -mx-2 px-2 rounded-lg transition-all";
+      servicePaymentDot.className = "w-2.5 h-2.5 rounded-full bg-rose-500 animate-ping";
+      servicePaymentLatency.className = "text-rose-600 dark:text-rose-400 font-bold";
+      servicePaymentLatency.textContent = "Timeout";
+      servicePaymentStatus.className = "px-2 py-0.5 rounded bg-rose-100 dark:bg-rose-900/60 text-rose-700 dark:text-rose-300 font-semibold";
+      servicePaymentStatus.textContent = "Incident";
+
+      incidentPill.textContent = "Payment Service Incident";
+      incidentTitle.textContent = "Checkout requests are failing due to a gateway connection timeout";
+      incidentDesc.textContent = "Customers attempting checkout on the web storefront are receiving 504 Gateway Timeout responses. Background payment workers have accumulated in wait states.";
+
+      incidentActionPanel.classList.remove('hidden');
+      healthyStateBox.classList.add('hidden');
+      lucide.createIcons();
+    }
+
+    function triggerMemoryScenario() {
+      triggerTimeoutScenario();
+      incidentPill.textContent = "Order Service Incident";
+      incidentPill.className = "px-3 py-1 rounded-full text-xs font-semibold bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-900";
+      incidentTitle.textContent = "Container memory consumption exceeding 95% threshold";
+      incidentDesc.textContent = "Order batch processor container is nearing OOM threshold due to a queue surge. Automated fix will expand container limits to 2GB.";
+      lucide.createIcons();
+    }
+
+    function resetAllHealthy() {
+      deployRecommendedFix();
+    }
+
+    // Initialize Lucide icons
+    lucide.createIcons();
+  </script>
+
+
+</body></html>

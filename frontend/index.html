@@ -1,254 +1,504 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MemOps SRE — Memory-Augmented Site Reliability Engineering</title>
-  <link rel="stylesheet" href="/static/styles.css">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <meta charset="utf-8">
+  <meta content="width=device-width, initial-scale=1.0" name="viewport">
+  <title>MemOps — Autonomous Reliability &amp; Memory Dashboard</title>
+
+  <!-- Tailwind CSS CDN with forms & typography -->
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+            mono: ['JetBrains Mono', 'Fira Code', 'Menlo', 'monospace'],
+          },
+          colors: {
+            brand: {
+              50: '#eef2ff',
+              100: '#e0e7ff',
+              500: '#3b82f6',
+              600: '#2563eb',
+              700: '#1d4ed8',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Google Fonts: Inter & JetBrains Mono -->
+  <link href="https://fonts.googleapis.com" rel="preconnect">
+  <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
   <!-- Three.js + OrbitControls -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <style>
+    /* Clean custom scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(148, 163, 184, 0.35);
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(148, 163, 184, 0.65);
+    }
+  </style>
 </head>
-<body class="dark-theme">
-  <!-- Topbar -->
-  <header class="topbar">
-    <div class="brand">
-      <div class="brand-logo">
-        <span class="logo-pulse"></span>
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
-        </svg>
-      </div>
-      <div>
-        <h1 class="brand-title">MemOps <span class="accent-text">SRE</span></h1>
-        <p class="brand-subtitle">Autonomous SRE with Persistent Hindsight Memory</p>
-      </div>
-    </div>
+<body class="bg-slate-50 dark:bg-[#0b0f19] text-slate-800 dark:text-slate-100 font-sans antialiased min-h-screen flex flex-col transition-colors duration-200">
 
-    <!-- Live Telemetry Stats -->
-    <div class="telemetry-bar">
-      <div class="stat-pill">
-        <span class="stat-label">HINDSIGHT MEMORY</span>
-        <span class="stat-value text-emerald" id="stat-memories-count">2 Verified</span>
-      </div>
-      <div class="stat-pill">
-        <span class="stat-label">AVG CONFIDENCE</span>
-        <span class="stat-value text-cyan" id="stat-avg-confidence">93%</span>
-      </div>
-      <div class="stat-pill">
-        <span class="stat-label">MTTR SAVED</span>
-        <span class="stat-value text-amber" id="stat-mttr-saved">70 mins</span>
-      </div>
-      <div class="stat-pill">
-        <span class="stat-label">SYSTEM STATE</span>
-        <span class="status-indicator-badge healthy" id="system-status-badge">
-          <span class="pulse-dot"></span> OPERATIONAL
-        </span>
-      </div>
-    </div>
-  </header>
-
-  <!-- Main Grid Workspace -->
-  <main class="main-layout">
-    
-    <!-- LEFT PANEL: Chaos & Nodes List -->
-    <aside class="panel left-panel">
-      <!-- Chaos Injection Console -->
-      <div class="card glass-card">
-        <div class="card-header">
-          <div class="card-title-wrap">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f43f5e" stroke-width="2">
-              <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
-            </svg>
-            <h2>Chaos Injector</h2>
+  <!-- TOP HEADER (Thin, Clean Taskbar) -->
+  <header class="border-b border-slate-200/80 dark:border-slate-800/80 bg-white/95 dark:bg-[#0f1422]/95 backdrop-blur sticky top-0 z-40">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-12 flex items-center justify-between">
+      
+      <!-- Brand & Single-line Navigation -->
+      <div class="flex items-center gap-5">
+        <a class="flex items-center gap-2 group" href="/">
+          <div class="h-7 w-7 rounded-lg bg-blue-600 flex items-center justify-center text-white shadow-sm shadow-blue-500/20 group-hover:bg-blue-700 transition">
+            <i class="w-4 h-4" data-lucide="shield-check"></i>
           </div>
-          <span class="badge badge-purple">Simulated Target</span>
-        </div>
-        <p class="card-desc">Inject realistic production failures to trigger MemOps automated investigation and memory recall.</p>
-        
-        <div class="chaos-buttons">
-          <button class="btn btn-chaos" onclick="triggerChaos('postgres_pool_exhaustion')">
-            <span class="btn-icon">💥</span>
-            <div class="btn-text">
-              <strong>Postgres Pool Exhaustion</strong>
-              <small>Simulates Oct 12 connection leak (PR #402)</small>
-            </div>
-          </button>
-          
-          <button class="btn btn-chaos" onclick="triggerChaos('docker_oom_leak')">
-            <span class="btn-icon">⚡</span>
-            <div class="btn-text">
-              <strong>Order Svc Docker OOM</strong>
-              <small>Simulates heap blowup (Exit code 137)</small>
-            </div>
-          </button>
+          <span class="font-bold text-slate-900 dark:text-white tracking-tight text-sm">MemOps <span class="text-blue-600 dark:text-blue-400">SRE</span></span>
+        </a>
 
-          <button class="btn btn-chaos" onclick="triggerChaos('bad_staging_deploy')">
-            <span class="btn-icon">⚠️</span>
-            <div class="btn-text">
-              <strong>Bad Staging Deploy</strong>
-              <small>Simulates thread starvation deadlock</small>
-            </div>
-          </button>
+        <!-- Divider -->
+        <div class="h-4 w-[1px] bg-slate-200 dark:border-slate-800 hidden sm:block"></div>
+
+        <!-- Single-line compact navigation -->
+        <nav class="hidden sm:flex items-center gap-1">
+          <a class="px-2.5 py-1 rounded-md text-xs font-medium bg-slate-100 dark:bg-slate-800 text-blue-600 dark:text-blue-400 transition" href="#">Overview</a>
+          <a class="px-2.5 py-1 rounded-md text-xs font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/60 transition" href="#three-mesh-card">3D Mesh</a>
+          <a class="px-2.5 py-1 rounded-md text-xs font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/60 transition" href="#terminal-section">Audit Log</a>
+        </nav>
+      </div>
+
+      <!-- Right Header Status Indicator & Theme Toggle -->
+      <div class="flex items-center gap-2.5">
+        <!-- Live System Status Pill -->
+        <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-900/60 text-emerald-700 dark:text-emerald-300 text-xs font-medium transition-all" id="header-status-pill">
+          <span class="w-1.5 h-1.5 rounded-full bg-emerald-500" id="header-status-dot"></span>
+          <span id="header-status-text" class="text-[11px]">All Systems Healthy</span>
         </div>
 
-        <button class="btn btn-secondary btn-full mt-2" onclick="resetCluster()">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
-          </svg>
-          Reset All Services to Healthy
+        <!-- Theme Toggle (Light / Dark) -->
+        <button aria-label="Toggle Dark and Light Mode" class="p-1.5 rounded-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition shadow-sm cursor-pointer" id="theme-toggle" title="Toggle theme">
+          <i class="w-3.5 h-3.5 hidden dark:inline-block" data-lucide="moon"></i>
+          <i class="w-3.5 h-3.5 inline-block dark:hidden text-amber-500" data-lucide="sun"></i>
         </button>
       </div>
 
-      <!-- Services Health List -->
-      <div class="card glass-card mt-3">
-        <div class="card-header">
-          <div class="card-title-wrap">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#06b6d4" stroke-width="2">
-              <rect x="2" y="2" width="20" height="8" rx="2" ry="2"/>
-              <rect x="2" y="14" width="20" height="8" rx="2" ry="2"/>
-              <line x1="6" y1="6" x2="6.01" y2="6"/>
-              <line x1="6" y1="18" x2="6.01" y2="18"/>
-            </svg>
-            <h2>Microservice Mesh</h2>
-          </div>
-          <span class="badge" id="node-count-badge">6 Nodes</span>
-        </div>
-        <div class="services-list" id="services-list">
-          <!-- Populated by JavaScript -->
-        </div>
-      </div>
-    </aside>
+    </div>
+  </header>
 
-    <!-- CENTER: Three.js 3D Visualizer Canvas -->
-    <section class="center-stage">
-      <div class="canvas-overlay">
-        <div class="stage-header">
-          <div class="mesh-status-tag">
-            <span class="live-dot"></span> 3D Topology Mesh (Live)
-          </div>
-          <div class="legend">
-            <span class="legend-item"><span class="dot green"></span> Healthy</span>
-            <span class="legend-item"><span class="dot yellow"></span> Recovering</span>
-            <span class="legend-item"><span class="dot red"></span> Outage</span>
-            <span class="legend-item"><span class="dot gold"></span> Memory Recall</span>
+  <!-- MAIN WRAPPER -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-6 lg:px-8 py-8 space-y-8">
+
+    <!-- GLOBAL RESOLUTION SUCCESS TOAST / BANNER -->
+    <div class="hidden rounded-xl border border-emerald-300 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/40 p-5 flex items-start justify-between gap-4 transition-all duration-300 shadow-sm" id="success-banner">
+      <div class="flex items-start gap-3.5">
+        <div class="p-2 rounded-lg bg-emerald-600 text-white mt-0.5 shadow-sm">
+          <i class="w-4 h-4" data-lucide="check"></i>
+        </div>
+        <div>
+          <h3 class="text-sm font-semibold text-emerald-900 dark:text-emerald-200" id="success-banner-title">Fix verified &amp; deployed successfully!</h3>
+          <p class="text-xs text-emerald-700 dark:text-emerald-300/90 mt-0.5 leading-relaxed" id="success-banner-desc">Target microservice has returned to nominal latency. Solution permanently cataloged into persistent Hindsight memory.</p>
+        </div>
+      </div>
+      <button class="text-emerald-600 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-200 text-xs font-semibold px-2 py-1 rounded cursor-pointer" onclick="dismissSuccessBanner()">
+        Dismiss
+      </button>
+    </div>
+
+    <!-- 1. TOP SUMMARY METRICS (4 Spacious KPI Cards) -->
+    <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      
+      <!-- Card 1: System Health -->
+      <div class="bg-white dark:bg-[#111726] rounded-xl border border-slate-200/90 dark:border-slate-800/90 p-6 shadow-sm flex flex-col justify-between transition-all hover:border-slate-300 dark:hover:border-slate-700">
+        <div class="flex items-center justify-between text-slate-500 dark:text-slate-400">
+          <span class="text-xs font-semibold uppercase tracking-wider">System Health</span>
+          <span class="p-2 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
+            <i class="w-4 h-4" data-lucide="activity"></i>
+          </span>
+        </div>
+        <div class="mt-4">
+          <div class="text-2xl font-bold text-emerald-600 dark:text-emerald-400 tracking-tight" id="kpi-health-value">100% Healthy</div>
+          <div class="flex items-center gap-1.5 mt-1.5 text-xs text-slate-500 dark:text-slate-400" id="kpi-health-sub">
+            All 6 microservices nominal
           </div>
         </div>
       </div>
-      
-      <!-- 3D Canvas Container -->
-      <div id="three-container"></div>
-      
-      <!-- Live Agent Stream Log Terminal -->
-      <div class="terminal-drawer">
-        <div class="terminal-header">
-          <div class="term-title">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <polyline points="4 17 10 11 4 5"/>
-              <line x1="12" y1="19" x2="20" y2="19"/>
-            </svg>
-            Agent Autonomous Reasoning Stream (Groq + Claude + Hindsight)
+
+      <!-- Card 2: Active Alerts -->
+      <div class="bg-white dark:bg-[#111726] rounded-xl border border-slate-200/90 dark:border-slate-800/90 p-6 shadow-sm flex flex-col justify-between transition-all hover:border-slate-300 dark:hover:border-slate-700">
+        <div class="flex items-center justify-between text-slate-500 dark:text-slate-400">
+          <span class="text-xs font-semibold uppercase tracking-wider">Active Outages</span>
+          <span class="p-2 rounded-lg bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400">
+            <i class="w-4 h-4" data-lucide="alert-circle"></i>
+          </span>
+        </div>
+        <div class="mt-4">
+          <div class="text-2xl font-bold text-slate-900 dark:text-white tracking-tight" id="kpi-alerts-value">0 Active</div>
+          <div class="flex items-center gap-1.5 mt-1.5 text-xs text-slate-500 dark:text-slate-400" id="kpi-alerts-sub">
+            Cluster fully operational
           </div>
-          <button class="btn-clear" onclick="clearTerminal()">Clear</button>
         </div>
-        <div class="terminal-body" id="terminal-logs">
-          <div class="log-line info">[SYS] MemOps SRE Engine online. Connected to Hindsight Memory Cloud.</div>
-          <div class="log-line info">[SYS] 3D Microservice topology initialized with 6 active nodes.</div>
+      </div>
+
+      <!-- Card 3: Hindsight Memory Bank -->
+      <div class="bg-white dark:bg-[#111726] rounded-xl border border-slate-200/90 dark:border-slate-800/90 p-6 shadow-sm flex flex-col justify-between transition-all hover:border-slate-300 dark:hover:border-slate-700">
+        <div class="flex items-center justify-between text-slate-500 dark:text-slate-400">
+          <span class="text-xs font-semibold uppercase tracking-wider">Hindsight Memory</span>
+          <span class="p-2 rounded-lg bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400">
+            <i class="w-4 h-4" data-lucide="database"></i>
+          </span>
         </div>
+        <div class="mt-4">
+          <div class="text-2xl font-bold text-slate-900 dark:text-white tracking-tight" id="kpi-memory-value">2 Verified</div>
+          <div class="flex items-center gap-1.5 mt-1.5 text-xs text-amber-600 dark:text-amber-400 font-medium" id="kpi-memory-sub">
+            93% avg confidence
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 4: MTTR Saved -->
+      <div class="bg-white dark:bg-[#111726] rounded-xl border border-slate-200/90 dark:border-slate-800/90 p-6 shadow-sm flex flex-col justify-between transition-all hover:border-slate-300 dark:hover:border-slate-700">
+        <div class="flex items-center justify-between text-slate-500 dark:text-slate-400">
+          <span class="text-xs font-semibold uppercase tracking-wider">MTTR Saved</span>
+          <span class="p-2 rounded-lg bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400">
+            <i class="w-4 h-4" data-lucide="zap"></i>
+          </span>
+        </div>
+        <div class="mt-4">
+          <div class="text-2xl font-bold text-slate-900 dark:text-white tracking-tight" id="kpi-mttr-value">70 mins</div>
+          <div class="flex items-center gap-1.5 mt-1.5 text-xs text-slate-500 dark:text-slate-400">
+            <span class="text-blue-600 dark:text-blue-400 font-semibold">96.8%</span> auto-remediation rate
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- 2. DIAGNOSTIC CHAOS PLAYGROUND (Non-congested, intuitive action bar) -->
+    <section class="bg-white dark:bg-[#111726] rounded-2xl border border-slate-200/90 dark:border-slate-800/90 p-6 shadow-sm">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+        <div>
+          <h2 class="text-sm uppercase tracking-wider font-semibold text-slate-900 dark:text-slate-200 flex items-center gap-2">
+            <i class="w-4 h-4 text-purple-500" data-lucide="flask-conical"></i>
+            Diagnostic Fault Injection Playground
+          </h2>
+          <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+            Inject realistic production anomalies into the sandboxed cluster to evaluate Hindsight vector recall and auto-patching.
+          </p>
+        </div>
+        <span class="text-[11px] font-mono px-2.5 py-1 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 self-start sm:self-auto">
+          Target: Sandbox Cluster
+        </span>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        <!-- Scenario 1: Postgres -->
+        <button class="px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/60 hover:bg-rose-50 dark:hover:bg-rose-950/40 hover:border-rose-300 dark:hover:border-rose-800 text-left transition group cursor-pointer" onclick="triggerChaos('postgres_pool_exhaustion')">
+          <div class="flex items-center gap-2 text-rose-600 dark:text-rose-400 text-xs font-semibold">
+            <i class="w-3.5 h-3.5" data-lucide="flame"></i>
+            <span>Postgres Pool Leak</span>
+          </div>
+          <div class="text-[11px] text-slate-500 dark:text-slate-400 mt-1">Tests exact Hindsight recall (Oct 12 incident)</div>
+        </button>
+
+        <!-- Scenario 2: Docker OOM -->
+        <button class="px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/60 hover:bg-amber-50 dark:hover:bg-amber-950/40 hover:border-amber-300 dark:hover:border-amber-800 text-left transition group cursor-pointer" onclick="triggerChaos('docker_oom_leak')">
+          <div class="flex items-center gap-2 text-amber-600 dark:text-amber-400 text-xs font-semibold">
+            <i class="w-3.5 h-3.5" data-lucide="cpu"></i>
+            <span>Order Svc Docker OOM</span>
+          </div>
+          <div class="text-[11px] text-slate-500 dark:text-slate-400 mt-1">Simulates exit code 137 heap blowup</div>
+        </button>
+
+        <!-- Scenario 3: Bad Deploy -->
+        <button class="px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/60 hover:bg-blue-50 dark:hover:bg-blue-950/40 hover:border-blue-300 dark:hover:border-blue-800 text-left transition group cursor-pointer" onclick="triggerChaos('bad_staging_deploy')">
+          <div class="flex items-center gap-2 text-blue-600 dark:text-blue-400 text-xs font-semibold">
+            <i class="w-3.5 h-3.5" data-lucide="git-pull-request"></i>
+            <span>Bad Staging Deploy</span>
+          </div>
+          <div class="text-[11px] text-slate-500 dark:text-slate-400 mt-1">Tests novel incident RCA synthesis</div>
+        </button>
+
+        <!-- Reset Cluster -->
+        <button class="px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/60 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 hover:border-emerald-300 dark:hover:border-emerald-800 text-left transition group cursor-pointer" onclick="resetCluster()">
+          <div class="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 text-xs font-semibold">
+            <i class="w-3.5 h-3.5" data-lucide="refresh-cw"></i>
+            <span>Restore All Services</span>
+          </div>
+          <div class="text-[11px] text-slate-500 dark:text-slate-400 mt-1">Reset all 6 nodes to healthy baseline</div>
+        </button>
       </div>
     </section>
 
-    <!-- RIGHT PANEL: Incident Triage & Human Approval Gate -->
-    <aside class="panel right-panel">
-      <!-- Active Incident Card -->
-      <div class="card glass-card incident-card" id="incident-box">
-        <div class="card-header">
-          <div class="card-title-wrap">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2">
-              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
-              <line x1="12" y1="9" x2="12" y2="13"/>
-              <line x1="12" y1="17" x2="12.01" y2="17"/>
-            </svg>
-            <h2>Incident Resolution Gate</h2>
-          </div>
-          <span class="badge" id="incident-status-tag">IDLE</span>
-        </div>
+    <!-- 3. MAIN WORKSPACE GRID (Left: Triage & RCA, Right: 3D Mesh & Health) -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
 
-        <div id="no-incident-msg" class="empty-state">
-          <div class="empty-icon">🛡️</div>
-          <p>No active critical incidents.</p>
-          <small>Trigger a chaos scenario from the left panel to observe Hindsight Memory Recall in action.</small>
-        </div>
-
-        <div id="active-incident-details" class="incident-content hidden">
-          <!-- Memory Recall Banner -->
-          <div id="memory-recall-banner" class="memory-recall-box">
-            <div class="recall-header">
-              <span class="recall-icon">🎯</span>
-              <strong>HINDSIGHT MEMORY HIT</strong>
-              <span class="confidence-pill" id="recall-confidence">94% Confidence</span>
+      <!-- LEFT COLUMN: Incident Triage & Live Logs (lg:col-span-7 xl:col-span-7) -->
+      <div class="lg:col-span-7 space-y-6">
+        
+        <!-- Active Incident / Triage Card -->
+        <div class="bg-white dark:bg-[#111726] rounded-2xl border border-slate-200/90 dark:border-slate-800/90 shadow-sm overflow-hidden" id="incident-card-container">
+          
+          <!-- Healthy State Box (Shown when cluster is healthy) -->
+          <div class="p-8 sm:p-12 text-center space-y-4" id="healthy-state-box">
+            <div class="inline-flex p-4 rounded-2xl bg-emerald-100 dark:bg-emerald-950/80 text-emerald-600 dark:text-emerald-400 shadow-sm shadow-emerald-500/10">
+              <i class="w-8 h-8" data-lucide="shield-check"></i>
             </div>
-            <p id="recall-summary" class="recall-body"></p>
-          </div>
-
-          <div class="incident-meta">
-            <div><span class="meta-label">Service:</span> <span id="inc-service" class="meta-val highlight"></span></div>
-            <div><span class="meta-label">Root Fault:</span> <span id="inc-fault" class="meta-val"></span></div>
-          </div>
-
-          <div class="rca-box">
-            <span class="rca-title">Root Cause Diagnosis:</span>
-            <p id="inc-rca" class="rca-text"></p>
-          </div>
-
-          <!-- Unified Diff Preview -->
-          <div class="diff-container">
-            <div class="diff-header">
-              <span>Proposed Hotfix Diff</span>
-              <span class="file-tag" id="diff-file">config/database.py</span>
+            <div>
+              <h3 class="text-lg font-bold text-slate-900 dark:text-white">All Microservices Operational</h3>
+              <p class="text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto mt-1 leading-relaxed">
+                Zero active alerts requiring operator attention. MemOps is streaming telemetry and ready to match novel or recurring outages against Hindsight memory.
+              </p>
             </div>
-            <pre class="diff-code" id="diff-content"></pre>
+            <div class="pt-2">
+              <button class="inline-flex items-center gap-2 text-xs font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 hover:underline cursor-pointer" onclick="triggerChaos('postgres_pool_exhaustion')">
+                <i class="w-3.5 h-3.5" data-lucide="sparkles"></i>
+                <span>Trigger Postgres Pool Leak to test instant memory recall &rarr;</span>
+              </button>
+            </div>
           </div>
 
-          <!-- Human-in-the-Loop Approval Action -->
-          <div class="approval-actions">
-            <button class="btn btn-primary btn-full" id="btn-approve" onclick="approveIncident()">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="20 6 9 17 4 12"/>
-              </svg>
-              Approve & Deploy Hotfix
+          <!-- Active Incident Details Box (Hidden when healthy) -->
+          <div class="hidden" id="active-incident-details">
+            
+            <!-- Card Header -->
+            <div class="p-6 sm:p-7 border-b border-slate-100 dark:border-slate-800/80 bg-slate-50/50 dark:bg-slate-900/30">
+              <div class="flex flex-wrap items-center justify-between gap-4">
+                <div class="flex items-center gap-2.5">
+                  <span class="px-3 py-1 rounded-full text-xs font-semibold bg-rose-100 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-900" id="incident-pill">
+                    Outage Detected
+                  </span>
+                  <span class="text-xs text-slate-400 dark:text-slate-500">Live SSE Detection</span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <span class="text-xs text-slate-500 dark:text-slate-400 font-medium">Severity:</span>
+                  <span class="text-xs font-semibold px-2 py-0.5 rounded bg-rose-100 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-900">
+                    P1 - Critical
+                  </span>
+                </div>
+              </div>
+
+              <h1 class="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white mt-3" id="incident-title">
+                Target service experiencing critical outage
+              </h1>
+              <p class="text-xs sm:text-sm text-slate-600 dark:text-slate-400 mt-2 leading-relaxed" id="incident-desc">
+                Investigating root cause and comparing failure vector with historical incident bank.
+              </p>
+            </div>
+
+            <!-- Card Body -->
+            <div class="p-6 sm:p-7 space-y-6">
+              
+              <!-- Section 1: Hindsight Recall Match Banner -->
+              <div class="hidden p-4 rounded-xl border border-amber-300 dark:border-amber-800/80 bg-amber-50/80 dark:bg-amber-950/30 transition-all" id="memory-recall-box">
+                <div class="flex items-start gap-3">
+                  <div class="p-1.5 rounded-lg bg-amber-500 text-white mt-0.5 shadow-sm">
+                    <i class="w-4 h-4" data-lucide="brain"></i>
+                  </div>
+                  <div>
+                    <div class="flex items-center gap-2">
+                      <span class="text-xs font-bold uppercase tracking-wider text-amber-900 dark:text-amber-200">Hindsight Memory Recalled</span>
+                      <span class="text-[11px] font-mono px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/60 text-amber-800 dark:text-amber-300 font-semibold" id="recall-confidence">
+                        98% Match
+                      </span>
+                    </div>
+                    <p class="text-xs text-amber-800 dark:text-amber-300/90 mt-1 leading-relaxed" id="recall-summary">
+                      Matched previous outage from historical database pool leak. Prior fix verified and recommended for immediate deployment.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Section 2: Automated RCA Diagnosis -->
+              <div>
+                <div class="flex items-center justify-between mb-2.5">
+                  <div class="flex items-center gap-2">
+                    <div class="p-1 rounded-md bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-400">
+                      <i class="w-4 h-4" data-lucide="search-code"></i>
+                    </div>
+                    <h2 class="text-xs uppercase tracking-wider font-semibold text-slate-900 dark:text-slate-200">
+                      Root Cause Analysis
+                    </h2>
+                  </div>
+                  <span class="text-xs text-slate-400 font-mono">Telemetry Correlation</span>
+                </div>
+                <div class="p-4 rounded-xl bg-slate-50/80 dark:bg-[#0c1220] border border-slate-200/80 dark:border-slate-800 text-xs sm:text-sm text-slate-700 dark:text-slate-300 leading-relaxed" id="incident-rca">
+                  Analyzing container telemetry and stacktrace...
+                </div>
+              </div>
+
+              <!-- Section 3: Hotfix Diff Preview -->
+              <div>
+                <div class="flex items-center justify-between mb-2.5">
+                  <div class="flex items-center gap-2">
+                    <div class="p-1 rounded-md bg-emerald-50 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400">
+                      <i class="w-4 h-4" data-lucide="code-2"></i>
+                    </div>
+                    <h2 class="text-xs uppercase tracking-wider font-semibold text-slate-900 dark:text-slate-200">
+                      Automated Hotfix Patch
+                    </h2>
+                  </div>
+                  <span class="text-xs font-mono text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-md border border-slate-200 dark:border-slate-700" id="diff-file">
+                    config/service.yaml
+                  </span>
+                </div>
+
+                <!-- Diff Container -->
+                <div class="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-950 text-slate-200 overflow-hidden font-mono text-xs shadow-inner">
+                  <div class="bg-slate-900/90 px-4 py-2 text-xs text-slate-400 flex items-center justify-between border-b border-slate-800">
+                    <span>Unified Diff Preview</span>
+                    <span class="text-slate-500">Live Patch</span>
+                  </div>
+                  <div class="p-4 space-y-1 overflow-x-auto" id="diff-content">
+                    <div class="text-slate-400">Synthesizing patch...</div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Section 4: Action Panel -->
+              <div class="pt-2 flex flex-col sm:flex-row items-center gap-3">
+                <button class="w-full sm:w-auto flex-1 py-3.5 px-6 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm transition shadow-sm shadow-blue-600/30 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50" id="btn-approve" onclick="approveIncident()">
+                  <i class="w-4 h-4" data-lucide="git-merge"></i>
+                  <span>Approve &amp; Deploy Hotfix</span>
+                </button>
+                <button class="w-full sm:w-auto py-3.5 px-5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 font-medium text-sm transition flex items-center justify-center gap-2 cursor-pointer" id="btn-reject" onclick="rejectIncident()">
+                  <i class="w-4 h-4 text-slate-400" data-lucide="bell-off"></i>
+                  <span>Dismiss / Snooze</span>
+                </button>
+              </div>
+
+            </div>
+
+          </div>
+
+        </div>
+
+        <!-- Real-Time SRE Activity Terminal / Event Log -->
+        <div class="bg-white dark:bg-[#111726] rounded-2xl border border-slate-200/90 dark:border-slate-800/90 p-5 shadow-sm space-y-3" id="terminal-section">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <i class="w-4 h-4 text-slate-500 dark:text-slate-400" data-lucide="terminal"></i>
+              <h2 class="text-xs uppercase tracking-wider font-semibold text-slate-900 dark:text-slate-200">
+                Live SRE Event Stream &amp; Audit Log
+              </h2>
+            </div>
+            <button class="text-[11px] font-mono text-slate-400 hover:text-slate-200 cursor-pointer" onclick="clearTerminal()">
+              Clear
             </button>
-            <button class="btn btn-outline btn-full mt-1" onclick="rejectIncident()">
-              Dismiss / Reject Patch
-            </button>
+          </div>
+          <div class="h-44 overflow-y-auto rounded-xl bg-slate-950 p-3.5 border border-slate-900 shadow-inner" id="terminal-logs">
+            <div class="font-mono text-xs text-blue-400 py-0.5">
+              <span class="text-slate-500 mr-2">[SYSTEM]</span>MemOps SRE Engine online. Listening to Kafka/SSE bus...
+            </div>
           </div>
         </div>
+
       </div>
 
-      <!-- Historical Hindsight Memory Drawer -->
-      <div class="card glass-card mt-3">
-        <div class="card-header">
-          <div class="card-title-wrap">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2">
-              <circle cx="12" cy="12" r="10"/>
-              <polyline points="12 6 12 12 14 14"/>
-            </svg>
-            <h2>Hindsight Retained Memory</h2>
+      <!-- RIGHT COLUMN: 3D Microservice Mesh, Services & Memory Bank (lg:col-span-5 xl:col-span-5) -->
+      <div class="lg:col-span-5 space-y-6">
+
+        <!-- 1. 3D Microservice Mesh Topology (Interactive Three.js Canvas) -->
+        <div class="bg-white dark:bg-[#111726] rounded-2xl border border-slate-200/90 dark:border-slate-800/90 p-5 shadow-sm" id="three-mesh-card">
+          <div class="flex items-center justify-between mb-3">
+            <div class="flex items-center gap-2">
+              <div class="p-1.5 rounded-lg bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-400">
+                <i class="w-4 h-4" data-lucide="box"></i>
+              </div>
+              <div>
+                <h2 class="text-xs uppercase tracking-wider font-semibold text-slate-900 dark:text-slate-200">
+                  3D Microservice Mesh
+                </h2>
+                <span class="text-[11px] text-slate-400">Interactive WebGL Topology</span>
+              </div>
+            </div>
+
+            <!-- Controls (Auto-rotate toggle & Reset camera) -->
+            <div class="flex items-center gap-1.5">
+              <button class="p-1.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition cursor-pointer text-xs flex items-center gap-1" id="btn-toggle-rotate" title="Toggle Auto-Rotation">
+                <i class="w-3.5 h-3.5" data-lucide="rotate-cw"></i>
+                <span class="hidden sm:inline">Rotate</span>
+              </button>
+              <button class="p-1.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition cursor-pointer text-xs flex items-center gap-1" id="btn-reset-cam" title="Reset Camera View">
+                <i class="w-3.5 h-3.5" data-lucide="focus"></i>
+                <span class="hidden sm:inline">Reset</span>
+              </button>
+            </div>
           </div>
-          <span class="badge badge-green">Persistent</span>
+
+          <!-- 3D Canvas Box -->
+          <div class="relative w-full h-[320px] rounded-xl overflow-hidden bg-slate-950/90 border border-slate-800/80 shadow-inner" id="three-wrapper">
+            <div class="w-full h-full" id="three-container"></div>
+            
+            <!-- Canvas Overlay Legend -->
+            <div class="absolute bottom-2 left-2 right-2 flex flex-wrap items-center justify-between gap-2 text-[10px] text-slate-300 bg-slate-950/80 backdrop-blur px-3 py-1.5 rounded-lg border border-slate-800/70">
+              <div class="flex items-center gap-3">
+                <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-emerald-500"></span>Healthy</span>
+                <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-rose-500"></span>Outage</span>
+                <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-amber-400"></span>Memory Hit</span>
+              </div>
+              <span class="text-slate-400 hidden sm:inline">Orbit: Drag &bull; Zoom: Scroll</span>
+            </div>
+          </div>
         </div>
-        <p class="card-desc">Verified runbooks and past outage solutions stored in memory graph.</p>
-        <div class="memory-feed" id="memory-feed">
-          <!-- Populated by JavaScript -->
+
+        <!-- 2. Monitored Microservices Table -->
+        <div class="bg-white dark:bg-[#111726] rounded-2xl border border-slate-200/90 dark:border-slate-800/90 p-6 shadow-sm">
+          <div class="flex items-center justify-between mb-4">
+            <h2 class="text-xs uppercase tracking-wider font-semibold text-slate-900 dark:text-slate-200 flex items-center gap-2">
+              <i class="w-4 h-4 text-blue-500" data-lucide="server"></i>
+              Monitored Microservices
+            </h2>
+            <span class="text-xs text-slate-500 dark:text-slate-400 font-mono">6 of 6 online</span>
+          </div>
+
+          <div class="divide-y divide-slate-100 dark:divide-slate-800/80" id="services-list">
+            <!-- Dynamic Services List populated by app.js -->
+            <div class="py-3 text-xs text-slate-400">Loading topology...</div>
+          </div>
         </div>
+
+        <!-- 3. Hindsight Memory Bank -->
+        <div class="bg-white dark:bg-[#111726] rounded-2xl border border-slate-200/90 dark:border-slate-800/90 p-6 shadow-sm">
+          <div class="flex items-center justify-between mb-4">
+            <h2 class="text-xs uppercase tracking-wider font-semibold text-slate-900 dark:text-slate-200 flex items-center gap-2">
+              <i class="w-4 h-4 text-amber-500" data-lucide="database"></i>
+              Hindsight Memory Bank
+            </h2>
+            <span class="text-xs text-amber-600 dark:text-amber-400 font-medium">Permanent Retention</span>
+          </div>
+
+          <div class="space-y-3" id="memory-feed">
+            <!-- Dynamic Memory Records populated by app.js -->
+            <div class="py-3 text-xs text-slate-400">Loading memory records...</div>
+          </div>
+        </div>
+
       </div>
-    </aside>
+
+    </div>
 
   </main>
 
+  <!-- Application Logic Scripts -->
   <script src="/static/visualizer3d.js"></script>
   <script src="/static/app.js"></script>
 </body>

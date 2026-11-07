@@ -12,13 +12,15 @@ class MicroserviceVisualizer3D {
     this.controls = null;
     this.nodes = {};
     this.links = [];
+    this.isAutoRotate = true;
+
     this.nodePositions = {
-      "api-gateway": new THREE.Vector3(0, 16, 0),
-      "auth-service": new THREE.Vector3(-18, 6, 8),
-      "order-service": new THREE.Vector3(0, 4, -14),
-      "payment-service": new THREE.Vector3(18, 6, 8),
-      "postgres-db": new THREE.Vector3(0, -16, 0),
-      "redis-cache": new THREE.Vector3(-16, -10, -14),
+      "api-gateway": new THREE.Vector3(0, 15, 0),
+      "auth-service": new THREE.Vector3(-16, 5, 8),
+      "order-service": new THREE.Vector3(0, 3, -14),
+      "payment-service": new THREE.Vector3(16, 5, 8),
+      "postgres-db": new THREE.Vector3(0, -15, 0),
+      "redis-cache": new THREE.Vector3(-14, -8, -12),
     };
 
     this.colors = {
@@ -36,18 +38,20 @@ class MicroserviceVisualizer3D {
   init() {
     if (!this.container) return;
 
-    const width = this.container.clientWidth;
-    const height = this.container.clientHeight;
+    // Clear previous children if re-initializing
+    this.container.innerHTML = '';
+
+    const width = this.container.clientWidth || 400;
+    const height = this.container.clientHeight || 320;
 
     // Scene
     this.scene = new THREE.Scene();
-    this.scene.fog = new THREE.FogExp2(0x090d16, 0.015);
 
     // Camera
     this.camera = new THREE.PerspectiveCamera(45, width / height, 1, 1000);
-    this.camera.position.set(0, 20, 65);
+    this.camera.position.set(0, 18, 62);
 
-    // Renderer
+    // Renderer with transparent canvas
     this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     this.renderer.setSize(width, height);
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -58,26 +62,34 @@ class MicroserviceVisualizer3D {
       this.controls = new THREE.OrbitControls(this.camera, this.renderer.domElement);
       this.controls.enableDamping = true;
       this.controls.dampingFactor = 0.05;
-      this.controls.maxDistance = 120;
+      this.controls.maxDistance = 110;
       this.controls.minDistance = 25;
-      this.controls.autoRotate = true;
-      this.controls.autoRotateSpeed = 0.6;
+      this.controls.autoRotate = this.isAutoRotate;
+      this.controls.autoRotateSpeed = 0.8;
     }
 
     // Lights
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
     this.scene.add(ambientLight);
 
-    const dirLight = new THREE.DirectionalLight(0x38bdf8, 1.2);
-    dirLight.position.set(30, 40, 20);
+    const dirLight = new THREE.DirectionalLight(0x38bdf8, 1.4);
+    dirLight.position.set(25, 40, 20);
     this.scene.add(dirLight);
 
-    // Grid Floor
-    const gridHelper = new THREE.GridHelper(90, 30, 0x1e293b, 0x0f172a);
-    gridHelper.position.y = -26;
+    const backLight = new THREE.DirectionalLight(0x818cf8, 0.8);
+    backLight.position.set(-25, -20, -20);
+    this.scene.add(backLight);
+
+    // Subtle 3D Grid Floor
+    const gridHelper = new THREE.GridHelper(80, 24, 0x334155, 0x1e293b);
+    gridHelper.position.y = -24;
     this.scene.add(gridHelper);
 
-    // Window resize handler
+    // Responsive Resize Observer
+    if (window.ResizeObserver) {
+      const ro = new ResizeObserver(() => this.onWindowResize());
+      ro.observe(this.container);
+    }
     window.addEventListener('resize', () => this.onWindowResize());
 
     // Build default mesh
@@ -89,8 +101,8 @@ class MicroserviceVisualizer3D {
   }
 
   buildNodes() {
-    const sphereGeo = new THREE.SphereGeometry(3.2, 32, 32);
-    const auraGeo = new THREE.SphereGeometry(4.4, 16, 16);
+    const sphereGeo = new THREE.SphereGeometry(3.0, 32, 32);
+    const auraGeo = new THREE.SphereGeometry(4.2, 16, 16);
 
     for (const [id, pos] of Object.entries(this.nodePositions)) {
       const isDb = id.includes('postgres') || id.includes('redis');
@@ -99,10 +111,10 @@ class MicroserviceVisualizer3D {
 
       const mat = new THREE.MeshStandardMaterial({
         color: baseColor,
-        roughness: 0.2,
-        metalness: 0.8,
+        roughness: 0.25,
+        metalness: 0.75,
         emissive: baseColor,
-        emissiveIntensity: 0.4,
+        emissiveIntensity: 0.45,
       });
 
       const mesh = new THREE.Mesh(sphereGeo, mat);
@@ -112,7 +124,7 @@ class MicroserviceVisualizer3D {
       const auraMat = new THREE.MeshBasicMaterial({
         color: baseColor,
         transparent: true,
-        opacity: 0.2,
+        opacity: 0.22,
         wireframe: true,
       });
       const auraMesh = new THREE.Mesh(auraGeo, auraMat);
@@ -180,7 +192,7 @@ class MicroserviceVisualizer3D {
 
     node.mat.color.setHex(targetColor);
     node.mat.emissive.setHex(targetColor);
-    node.mat.emissiveIntensity = status === 'critical' ? 0.9 : 0.4;
+    node.mat.emissiveIntensity = status === 'critical' ? 0.95 : 0.45;
     node.auraMat.color.setHex(targetColor);
   }
 
@@ -193,9 +205,25 @@ class MicroserviceVisualizer3D {
       node.status = 'healthy';
       node.mat.color.setHex(baseColor);
       node.mat.emissive.setHex(baseColor);
-      node.mat.emissiveIntensity = 0.4;
+      node.mat.emissiveIntensity = 0.45;
       node.auraMat.color.setHex(baseColor);
       node.mesh.scale.set(1, 1, 1);
+    }
+  }
+
+  toggleAutoRotate() {
+    this.isAutoRotate = !this.isAutoRotate;
+    if (this.controls) {
+      this.controls.autoRotate = this.isAutoRotate;
+    }
+    return this.isAutoRotate;
+  }
+
+  resetCamera() {
+    if (this.camera && this.controls) {
+      this.camera.position.set(0, 18, 62);
+      this.controls.target.set(0, 0, 0);
+      this.controls.update();
     }
   }
 
@@ -203,6 +231,8 @@ class MicroserviceVisualizer3D {
     if (!this.container || !this.camera || !this.renderer) return;
     const width = this.container.clientWidth;
     const height = this.container.clientHeight;
+    if (width === 0 || height === 0) return;
+
     this.camera.aspect = width / height;
     this.camera.updateProjectionMatrix();
     this.renderer.setSize(width, height);
@@ -213,17 +243,17 @@ class MicroserviceVisualizer3D {
 
     const time = Date.now() * 0.003;
 
-    // Pulse critical nodes
+    // Pulse critical or recovering nodes
     for (const [id, node] of Object.entries(this.nodes)) {
       if (node.status === 'critical') {
-        const s = 1.0 + Math.sin(time * 3) * 0.22;
+        const s = 1.0 + Math.sin(time * 3.5) * 0.22;
         node.mesh.scale.set(s, s, s);
-        node.aura.rotation.y += 0.04;
+        node.aura.rotation.y += 0.05;
       } else if (node.status === 'recovering') {
-        const s = 1.0 + Math.sin(time * 1.5) * 0.1;
+        const s = 1.0 + Math.sin(time * 2.0) * 0.12;
         node.mesh.scale.set(s, s, s);
       } else {
-        node.aura.rotation.y += 0.005;
+        node.aura.rotation.y += 0.006;
       }
     }
 
