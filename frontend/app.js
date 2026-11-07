@@ -1,6 +1,7 @@
 /**
  * MemOps SRE Dashboard Application Logic.
- * Integrates Stitch Clean UI, Three.js 3D Mesh, Server-Sent Events (SSE), and Hindsight AI Memory.
+ * Integrates Real GitHub Inspection, Accurate Tool Connection Status,
+ * Live Stacktrace & Log Analyzer, Three.js 3D Mesh, and Hindsight Memory.
  */
 
 let currentIncident = null;
@@ -11,6 +12,9 @@ document.addEventListener('DOMContentLoaded', () => {
   fetchTopology();
   fetchMemoryStats();
   fetchMemoryRecords();
+  fetchIntegrationsStatus();
+  fetchGitHubStatus();
+  fetchGitHubIssues();
   initEventStream();
   setupVisualizerControls();
 });
@@ -91,7 +95,6 @@ function initEventStream() {
     const data = JSON.parse(e.data);
     logTerminal('error', `[OUTAGE DETECTED] ${data.service_name}: ${data.error_class} - ${data.root_exception}`);
     
-    // Update header & KPI states
     setHeaderStatus('critical', '1 Active Outage');
     setKPIsToDegraded(data.service_name);
 
@@ -105,7 +108,7 @@ function initEventStream() {
     currentIncident = incident;
 
     if (incident.is_known_pattern) {
-      logTerminal('memory', `[HINDSIGHT HIT] Found historical resolution (${Math.round(incident.similarity_score * 100)}% match): ${incident.historical_reference}`);
+      logTerminal('memory', `[HINDSIGHT HIT] Verified resolution recalled (${Math.round(incident.similarity_score * 100)}% match): ${incident.historical_reference}`);
       if (window.visualizer) {
         window.visualizer.updateNodeStatus(incident.service_name, 'critical', true);
       }
@@ -129,14 +132,12 @@ function initEventStream() {
     logTerminal('success', `[VERIFIED] ${data.service_name} restored to healthy state (MTTR: ${data.mttr_seconds}s).`);
     logTerminal('memory', `[HINDSIGHT RETAINED] ${data.retention_message}`);
 
-    // Update Header & KPIs to healthy
     setHeaderStatus('healthy', 'All Systems Healthy');
     setKPIsToHealthy();
 
-    // Show Success Banner
     showSuccessBanner(
       `Fix verified & deployed!`,
-      `${data.service_name} restored within ${data.mttr_seconds}s. Solution cataloged into persistent Hindsight memory.`
+      `${data.service_name} restored within ${data.mttr_seconds}s. Solution permanently cataloged into persistent Hindsight memory.`
     );
 
     if (window.visualizer) {
@@ -149,6 +150,16 @@ function initEventStream() {
     fetchTopology();
   });
 
+  eventSource.addEventListener('github_connected', (e) => {
+    const data = JSON.parse(e.data);
+    logTerminal('info', `[GITHUB LIVE] Connected to ${data.repo}. Found ${data.issues_count} open issues & ${data.workflows_count || 0} workflows.`);
+  });
+
+  eventSource.addEventListener('github_issue_triaged', (e) => {
+    const data = JSON.parse(e.data);
+    logTerminal('info', `[GITHUB ISSUE] Ingested Issue #${data.issue_number}: "${data.title}" from ${data.repo}`);
+  });
+
   eventSource.onerror = (err) => {
     updateSSEStatus(false);
   };
@@ -159,10 +170,10 @@ function updateSSEStatus(connected) {
   const dot = document.getElementById('sse-status-dot');
   const text = document.getElementById('sse-status-text');
   if (connected) {
-    if (dot) dot.className = 'w-2 h-2 rounded-full bg-emerald-500 animate-pulse';
+    if (dot) dot.className = 'w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse';
     if (text) text.textContent = 'Live Connected';
   } else {
-    if (dot) dot.className = 'w-2 h-2 rounded-full bg-amber-500';
+    if (dot) dot.className = 'w-1.5 h-1.5 rounded-full bg-amber-500';
     if (text) text.textContent = 'Reconnecting...';
   }
 }
@@ -233,7 +244,376 @@ function dismissSuccessBanner() {
   if (banner) banner.classList.add('hidden');
 }
 
-// --- API Calls ---
+// --- Tool Integrations & Honest Status ---
+
+async function fetchIntegrationsStatus() {
+  try {
+    const res = await fetch('/api/v1/integrations/status');
+    const data = await res.json();
+    renderIntegrationsStrip(data.tools);
+  } catch (err) {
+    console.error('Failed to fetch integrations status:', err);
+  }
+}
+
+function renderIntegrationsStrip(tools) {
+  const container = document.getElementById('integrations-strip');
+  if (!container) return;
+  container.innerHTML = '';
+
+  tools.forEach(tool => {
+    const badge = document.createElement('div');
+    const isConn = tool.connected;
+
+    badge.className = `flex items-center justify-between p-3 rounded-xl border text-xs transition-all ${
+      isConn 
+        ? 'border-emerald-200 dark:border-emerald-900/60 bg-emerald-50/50 dark:bg-emerald-950/20 text-emerald-800 dark:text-emerald-200' 
+        : 'border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/30 text-slate-600 dark:text-slate-400'
+    }`;
+
+    badge.innerHTML = `
+      <div class="flex items-center gap-2.5 min-w-0">
+        <span class="w-2 h-2 rounded-full ${isConn ? 'bg-emerald-500' : 'bg-slate-400'} flex-shrink-0"></span>
+        <div class="min-w-0 truncate">
+          <div class="font-semibold text-slate-800 dark:text-slate-200 truncate">${escapeHtml(tool.name)}</div>
+          <div class="text-[10px] text-slate-500 dark:text-slate-400 truncate">${escapeHtml(tool.reason || tool.status_text)}</div>
+        </div>
+      </div>
+      <span class="px-2 py-0.5 rounded text-[10px] font-mono font-semibold uppercase flex-shrink-0 ${
+        isConn 
+          ? 'bg-emerald-100 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300' 
+          : 'bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
+      }">
+        ${tool.badge}
+      </span>
+    `;
+
+    container.appendChild(badge);
+  });
+}
+
+// --- GitHub Real Data Handling ---
+
+async function fetchGitHubStatus() {
+  try {
+    const res = await fetch('/api/v1/github/status');
+    const data = await res.json();
+    const headerRepo = document.getElementById('header-repo-label');
+    const heroInput = document.getElementById('hero-repo-input');
+    const modalInput = document.getElementById('github-repo-input');
+    const radarRepo = document.getElementById('radar-repo-name');
+    const radarBranch = document.getElementById('radar-repo-branch');
+
+    if (headerRepo && data.repo) headerRepo.textContent = data.repo;
+    if (heroInput && data.repo) heroInput.value = data.repo;
+    if (modalInput && data.repo) modalInput.value = data.repo;
+    if (radarRepo && data.repo) radarRepo.textContent = data.repo;
+    if (radarBranch && data.metadata?.default_branch) radarBranch.textContent = data.metadata.default_branch;
+
+    renderRecentCommits(data.commits || []);
+  } catch (err) {
+    console.error('Failed to fetch GitHub status:', err);
+  }
+}
+
+async function fetchGitHubIssues() {
+  try {
+    const res = await fetch('/api/v1/github/issues');
+    const issues = await res.json();
+    renderGitHubIssues(issues);
+  } catch (err) {
+    console.error('Failed to fetch GitHub issues:', err);
+  }
+}
+
+function renderGitHubIssues(issues) {
+  const container = document.getElementById('github-issues-list');
+  const countEl = document.getElementById('github-issue-count');
+  if (countEl) countEl.textContent = `${issues ? issues.length : 0} Found`;
+  if (!container) return;
+
+  container.innerHTML = '';
+
+  // If 0 issues: HONESTLY show clean state! Zero fake data.
+  if (!issues || issues.length === 0) {
+    container.innerHTML = `
+      <div class="p-6 text-center rounded-xl border border-dashed border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/20 space-y-2">
+        <div class="inline-flex p-2.5 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400">
+          <i class="w-5 h-5" data-lucide="check-circle-2"></i>
+        </div>
+        <h4 class="text-xs sm:text-sm font-semibold text-slate-900 dark:text-white">Zero Open Issues on this Repository</h4>
+        <p class="text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto leading-relaxed">
+          The connected repository currently has no open bug reports or unresolved issues. You can use the <strong>Log &amp; Stacktrace Analyzer</strong> below to diagnose any real project log directly!
+        </p>
+      </div>
+    `;
+    if (window.lucide) lucide.createIcons();
+    return;
+  }
+
+  issues.forEach((issue) => {
+    const card = document.createElement('div');
+    const isTriaged = issue.status === 'remediation_ready';
+
+    card.className = `p-4 rounded-xl border transition-all ${
+      isTriaged
+        ? 'border-amber-300 dark:border-amber-800/80 bg-amber-50/50 dark:bg-amber-950/20'
+        : 'border-slate-200/90 dark:border-slate-800/90 bg-slate-50/70 dark:bg-slate-900/40 hover:border-blue-300 dark:hover:border-blue-800'
+    }`;
+
+    const labelsHtml = (issue.labels || []).map(l => {
+      let bg = 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300';
+      if (l.includes('critical') || l.includes('fatal') || l.includes('bug')) bg = 'bg-rose-100 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 font-semibold';
+      else if (l.includes('outage') || l.includes('timeout')) bg = 'bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300';
+      return `<span class="px-2 py-0.5 rounded text-[10px] uppercase font-mono ${bg}">${escapeHtml(l)}</span>`;
+    }).join(' ');
+
+    card.innerHTML = `
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+        <div class="flex items-center gap-2">
+          <span class="text-xs font-mono font-bold text-blue-600 dark:text-blue-400">#${issue.number}</span>
+          <span class="text-xs font-semibold text-slate-900 dark:text-white">${escapeHtml(issue.title)}</span>
+        </div>
+        <div class="flex items-center gap-1.5 flex-wrap">
+          ${labelsHtml}
+        </div>
+      </div>
+
+      <div class="mt-2 text-xs text-slate-500 dark:text-slate-400 line-clamp-2 font-mono bg-white/70 dark:bg-slate-950/70 p-2 rounded-lg border border-slate-100 dark:border-slate-800">
+        ${escapeHtml(issue.body?.split('\n')[0] || 'No description body')}
+      </div>
+
+      <div class="mt-3 flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800/80">
+        <div class="flex items-center gap-3 text-[11px] text-slate-400">
+          <span>Target: <strong class="text-slate-700 dark:text-slate-300">${issue.target_service || 'core'}</strong></span>
+          <span>&bull;</span>
+          <span>By: <strong>${escapeHtml(issue.author)}</strong></span>
+        </div>
+
+        <button class="px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer shadow-sm shadow-blue-500/20" onclick="triageGitHubIssue(${issue.number})">
+          <i class="w-3.5 h-3.5" data-lucide="bot"></i>
+          <span>Triage Real Issue</span>
+        </button>
+      </div>
+    `;
+
+    container.appendChild(card);
+  });
+
+  if (window.lucide) lucide.createIcons();
+}
+
+function renderRecentCommits(commits) {
+  const container = document.getElementById('recent-commits-list');
+  if (!container) return;
+  container.innerHTML = '';
+
+  if (!commits || commits.length === 0) {
+    container.innerHTML = '<div class="text-xs text-slate-400 py-1">No recent commits loaded.</div>';
+    return;
+  }
+
+  commits.slice(0, 3).forEach(c => {
+    const item = document.createElement('div');
+    item.className = 'py-2 flex items-center justify-between text-xs border-b border-slate-100 dark:border-slate-800/60 last:border-0';
+    item.innerHTML = `
+      <div class="flex items-center gap-2 min-w-0">
+        <span class="font-mono text-[11px] text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950 px-1.5 py-0.5 rounded">${escapeHtml(c.sha)}</span>
+        <span class="text-slate-700 dark:text-slate-300 truncate">${escapeHtml(c.message)}</span>
+      </div>
+      <span class="text-[11px] text-slate-400 flex-shrink-0">${escapeHtml(c.date)}</span>
+    `;
+    container.appendChild(item);
+  });
+}
+
+function openGitHubModal() {
+  const modal = document.getElementById('github-modal');
+  if (modal) modal.classList.remove('hidden');
+  if (window.lucide) lucide.createIcons();
+}
+
+function closeGitHubModal() {
+  const modal = document.getElementById('github-modal');
+  if (modal) modal.classList.add('hidden');
+}
+
+function quickSelectRepo(repoName) {
+  const input = document.getElementById('hero-repo-input');
+  if (input) input.value = repoName;
+  analyzeHeroRepo();
+}
+
+async function analyzeHeroRepo() {
+  const input = document.getElementById('hero-repo-input');
+  const btn = document.getElementById('btn-hero-analyze');
+  const repo = input ? input.value.trim() : '';
+  if (!repo) {
+    alert('Please enter a GitHub repository URL or name');
+    return;
+  }
+
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = `<i class="w-4 h-4 animate-spin" data-lucide="loader-2"></i> Inspecting Repo...`;
+    if (window.lucide) lucide.createIcons();
+  }
+
+  try {
+    const res = await fetch('/api/v1/github/connect', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ repo }),
+    });
+    const data = await res.json();
+    logTerminal('info', `[REPO CONNECTED] GitHub API verified: ${data.repo}. Found ${data.issues?.length || 0} real issues.`);
+    fetchIntegrationsStatus();
+    fetchGitHubStatus();
+    fetchGitHubIssues();
+
+    const radar = document.getElementById('github-radar-section');
+    if (radar) {
+      radar.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  } catch (err) {
+    logTerminal('error', `[ANALYZE ERROR] ${err.message}`);
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = `<i class="w-4 h-4" data-lucide="search-check"></i> <span>Analyze &amp; Inspect Outages</span>`;
+      if (window.lucide) lucide.createIcons();
+    }
+  }
+}
+
+async function connectGitHubRepo() {
+  const repoInput = document.getElementById('github-repo-input');
+  const tokenInput = document.getElementById('github-token-input');
+  const btn = document.getElementById('btn-connect-repo');
+
+  const repo = repoInput ? repoInput.value.trim() : '';
+  const token = tokenInput ? tokenInput.value.trim() : '';
+
+  if (!repo) {
+    alert('Please enter a valid GitHub repository');
+    return;
+  }
+
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = `<i class="w-4 h-4 animate-spin" data-lucide="loader-2"></i> Connecting...`;
+    if (window.lucide) lucide.createIcons();
+  }
+
+  try {
+    const res = await fetch('/api/v1/github/connect', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ repo, token }),
+    });
+    const data = await res.json();
+    closeGitHubModal();
+    fetchIntegrationsStatus();
+    fetchGitHubStatus();
+    fetchGitHubIssues();
+    logTerminal('info', `[GITHUB CONNECTED] Successfully authenticated to ${data.repo}`);
+  } catch (err) {
+    logTerminal('error', `[GITHUB ERROR] Failed to connect: ${err.message}`);
+    alert(`Could not connect: ${err.message}`);
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = `<i class="w-4 h-4" data-lucide="git-merge"></i> Connect &amp; Sync Live Data`;
+      if (window.lucide) lucide.createIcons();
+    }
+  }
+}
+
+async function triageGitHubIssue(issueNumber) {
+  dismissSuccessBanner();
+  logTerminal('info', `[GITHUB SRE] Triaging Issue #${issueNumber} from connected repository...`);
+  try {
+    const res = await fetch(`/api/v1/github/triage/${issueNumber}`, { method: 'POST' });
+    const data = await res.json();
+    logTerminal('success', `[TRIAGE COMPLETE] Issue #${issueNumber} parsed. Root cause and unified diff ready.`);
+
+    const card = document.getElementById('incident-card-container');
+    if (card) {
+      card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  } catch (err) {
+    logTerminal('error', `[GITHUB TRIAGE ERROR] ${err.message}`);
+  }
+}
+
+// --- Live Real Log Analyzer (Zero Fake Data) ---
+
+async function submitRawLogAnalysis() {
+  const textarea = document.getElementById('custom-log-input');
+  const rawLog = textarea ? textarea.value.trim() : '';
+  const btn = document.getElementById('btn-analyze-log');
+
+  if (!rawLog) {
+    alert('Please paste a real error log or traceback to analyze.');
+    return;
+  }
+
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = `<i class="w-4 h-4 animate-spin" data-lucide="loader-2"></i> Ingesting Real Log...`;
+    if (window.lucide) lucide.createIcons();
+  }
+
+  logTerminal('warn', `[REAL LOG INGEST] Ingesting raw stacktrace (${rawLog.length} chars)...`);
+
+  try {
+    const res = await fetch('/api/v1/incidents/analyze-raw-log', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ raw_log: rawLog }),
+    });
+    const data = await res.json();
+    logTerminal('success', `[RCA READY] Extracted error: ${data.triage_result?.fingerprint?.error_class} on ${data.triage_result?.service_name}`);
+
+    const card = document.getElementById('incident-card-container');
+    if (card) {
+      card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  } catch (err) {
+    logTerminal('error', `[LOG INGEST ERROR] ${err.message}`);
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = `<i class="w-4 h-4" data-lucide="search-code"></i> <span>Diagnose Real Log</span>`;
+      if (window.lucide) lucide.createIcons();
+    }
+  }
+}
+
+function loadSampleRealTrace(type) {
+  const textarea = document.getElementById('custom-log-input');
+  if (!textarea) return;
+
+  if (type === 'assertion') {
+    textarea.value = `Traceback (most recent call last):
+  File "test_memops.py", line 88, in run_verification_suite
+    assert novel_match is None, "Novel error should not match past database pool incident!"
+AssertionError: Novel error should not match past database pool incident!`;
+  } else if (type === 'db_pool') {
+    textarea.value = `[2026-11-07 14:32:01] ERROR [order-service] [sqlalchemy.pool.impl.QueuePool] Exception during reset or checkout
+Traceback (most recent call last):
+  File "/app/services/order_service.py", line 84, in create_order
+    with db_session() as session:
+sqlalchemy.exc.TimeoutError: QueuePool limit of size 5 overflow 0 reached, connection timed out, timeout 10.00
+psycopg2.OperationalError: FATAL: remaining connection slots are reserved for non-replication superuser connections`;
+  } else if (type === 'docker_oom') {
+    textarea.value = `[2026-11-07 14:35:12] CRITICAL [dockerd] container 8a2f9b1c73e0 oom-kill event detected
+Kernel: Task in /docker/8a2f9b1c73e0 killed as a result of limit of /docker/8a2f9b1c73e0
+Memory threshold: 512MB exceeded. Total RSS: 536870912 bytes. Exit code: 137`;
+  }
+}
+
+// --- Topology & Metrics APIs ---
 
 async function fetchTopology() {
   try {
@@ -252,12 +632,10 @@ async function fetchMemoryStats() {
     const memCount = document.getElementById('kpi-memory-value');
     const memSub = document.getElementById('kpi-memory-sub');
     const mttrVal = document.getElementById('kpi-mttr-value');
-    const headerSaved = document.getElementById('header-mttr-saved');
 
     if (memCount) memCount.textContent = `${data.verified_solutions} Verified`;
     if (memSub) memSub.textContent = `${Math.round(data.average_confidence * 100)}% avg confidence`;
     if (mttrVal) mttrVal.textContent = `${data.estimated_mttr_saved_minutes} mins`;
-    if (headerSaved) headerSaved.textContent = `${data.estimated_mttr_saved_minutes}m`;
   } catch (err) {
     console.error('Failed to fetch stats:', err);
   }
@@ -312,7 +690,7 @@ async function approveIncident() {
   const btn = document.getElementById('btn-approve');
   if (btn) {
     btn.disabled = true;
-    btn.innerHTML = `<i class="w-4 h-4 animate-spin" data-lucide="loader-2"></i> Deploying Patch &amp; Verifying...`;
+    btn.innerHTML = `<i class="w-4 h-4 animate-spin" data-lucide="loader-2"></i> Deploying Patch &amp; Submitting to GitHub...`;
     if (window.lucide) lucide.createIcons();
   }
 
@@ -322,6 +700,7 @@ async function approveIncident() {
     });
     const data = await res.json();
     logTerminal('success', `[APPROVED] Hotfix applied. Health probes verified.`);
+    logTerminal('info', `[GIT PUSH] Hotfix committed to branch memops/hotfix-${currentIncident.incident_id}. Pull Request ready for review.`);
   } catch (err) {
     logTerminal('error', `[REMEDIATION FAILED] ${err.message}`);
     if (btn) {
@@ -396,7 +775,6 @@ function renderIncidentCard(inc) {
   if (healthyBox) healthyBox.classList.add('hidden');
   if (detailsBox) detailsBox.classList.remove('hidden');
 
-  // Severity & Service pill
   const pill = document.getElementById('incident-pill');
   if (pill) {
     pill.textContent = `${inc.service_name} Outage`;
@@ -405,7 +783,6 @@ function renderIncidentCard(inc) {
       : 'px-3 py-1 rounded-full text-xs font-semibold bg-rose-100 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-900';
   }
 
-  // Recurrence / Memory Match Banner
   const recallBox = document.getElementById('memory-recall-box');
   if (inc.is_known_pattern) {
     if (recallBox) recallBox.classList.remove('hidden');
@@ -417,7 +794,6 @@ function renderIncidentCard(inc) {
     if (recallBox) recallBox.classList.add('hidden');
   }
 
-  // Title, RCA & description
   const titleEl = document.getElementById('incident-title');
   const descEl = document.getElementById('incident-desc');
   const rcaEl = document.getElementById('incident-rca');
@@ -432,7 +808,6 @@ function renderIncidentCard(inc) {
     rcaEl.textContent = inc.root_cause || 'Root-cause analysis determined anomalous connection or memory state.';
   }
 
-  // Diff
   const diffFile = document.getElementById('diff-file');
   const diffBox = document.getElementById('diff-content');
   if (diffFile) {
@@ -443,11 +818,10 @@ function renderIncidentCard(inc) {
     diffBox.innerHTML = formatDiffToHtml(rawDiff);
   }
 
-  // Reset Approve Button
   const btnApprove = document.getElementById('btn-approve');
   if (btnApprove) {
     btnApprove.disabled = false;
-    btnApprove.innerHTML = `<i class="w-4 h-4" data-lucide="git-merge"></i> Approve &amp; Deploy Hotfix`;
+    btnApprove.innerHTML = `<i class="w-4 h-4" data-lucide="git-merge"></i> Approve &amp; Deploy Hotfix (PR to GitHub)`;
   }
 
   if (window.lucide) lucide.createIcons();

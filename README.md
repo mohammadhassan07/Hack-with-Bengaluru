@@ -58,6 +58,7 @@ Traditional monitoring and APM tools (Datadog, Grafana, Prometheus, PagerDuty) a
 | ⚡ **Sub-Second Log Ingestion** | Rapid log parsing using Groq LPU (`llama-3.3-70b-versatile`) with an instant deterministic regex tokenizer fallback. |
 | 🔬 **Deep Causal RCA** | Architectural root-cause reasoning via Claude 3.5 Sonnet (`claude-3-5-sonnet-20241022`) generating git-compatible unified diff patches. |
 | 🌐 **3D Microservice Mesh** | Real-time Three.js WebGL topology visualizer featuring glowing node spheres, animated dependency links, shockwave pulses, and camera controls. |
+| 🐙 **Live GitHub Repo Analysis** | Enter any GitHub repository link at startup to stream live issues, analyze stacktraces, simulate failures across the 3D topology, and auto-generate hotfix pull requests. |
 | 📡 **Real-Time Telemetry Stream** | Server-Sent Events (SSE) broadcasting cluster state, live terminal logs, incident alerts, and memory updates with zero polling. |
 | 💥 **Built-In Chaos Simulator** | Interactive fault injector triggering PostgreSQL pool exhaustion, Docker container OOM kills (Exit 137), and staging deploy timeouts. |
 | 📴 **100% Offline Out-of-the-Box** | Runs completely locally without requiring external cloud accounts or API keys using heuristic fallbacks and embedded storage. |
@@ -216,7 +217,14 @@ python run.py
 
 Open **[http://localhost:8000](http://localhost:8000)** in your browser.
 
-### 4. (Optional) Cloud LLM Keys
+### 4. Analyze Any GitHub Repository
+Right at the top of the dashboard, enter any public or private GitHub repository link (e.g. `https://github.com/mohammadhassan07/Hack-with-Bengaluru` or `tiangolo/fastapi`) and click **"Analyze & Inspect Outages"**:
+- **Live Error Radar**: Streams open issues, exception logs, and bug reports from that repository.
+- **3D Microservice Shockwaves**: Lights up the affected services in the 3D WebGL mesh when an issue is selected.
+- **Hindsight Memory Recall**: Cross-references the bug with historical post-mortems and verified runbooks.
+- **Automated Pull Request Hotfix**: Generates a unified diff patch ready for 1-click deployment and PR creation on GitHub.
+
+### 5. (Optional) Cloud LLM Keys
 MemOps includes zero-config local heuristic agents and embedded vector storage that work **100% offline out-of-the-box**. If you wish to use live cloud endpoints for Groq or Claude:
 
 ```bash
@@ -305,6 +313,12 @@ Expected output:
 | `POST` | `/api/v1/incidents/{id}/reject` | Human-in-the-loop: Dismisses proposed patch. |
 | `GET` | `/api/v1/memory/records` | Lists all historical records retained in Hindsight memory. |
 | `GET` | `/api/v1/memory/stats` | Returns MTTR reduction minutes, total recalls, and average confidence. |
+| `POST` | `/api/v1/github/connect` | Connects any GitHub repository URL to stream live issues and error reports. |
+| `GET` | `/api/v1/github/status` | Returns connected repository metadata, default branch, and issue count. |
+| `GET` | `/api/v1/github/issues` | Retrieves live open issues, error labels, and stacktraces from the repo. |
+| `POST` | `/api/v1/github/triage/{num}` | Triggers autonomous SRE investigation & hotfix patch on a specific issue. |
+| `GET` | `/api/v1/integrations/status` | Checks honest connectivity for all external tools (GitHub, Docker, K8s, APM). |
+| `POST` | `/api/v1/incidents/analyze-raw-log` | Analyzes real user-provided stacktraces, extracting exact files, lines, and exceptions. |
 
 ---
 

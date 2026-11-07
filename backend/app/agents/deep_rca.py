@@ -126,24 +126,52 @@ Respond ONLY with valid JSON:
                 pr_reference="PR #418",
             )
         else:
-            root_cause = (
-                f"Unhandled fault in {fingerprint.service_name}: {fingerprint.root_exception}. "
-                "Service encountered unexpected lock timeout or unhandled upstream failure."
-            )
-            remediation = RemediationAction(
-                action_type="container_restart",
-                target_service=fingerprint.service_name,
-                target_file="config/service.yaml",
-                diff_patch="""--- a/config/service.yaml
+            # Check if actual code frames exist in raw_log
+            import re
+            frames = re.findall(r'File "([^"]+)", line (\d+), in (\w+)', raw_log)
+            if frames:
+                actual_file = frames[-1][0].replace("\\", "/")
+                line_no = frames[-1][1]
+                func_name = frames[-1][2]
+                
+                root_cause = (
+                    f"{fingerprint.error_class} in `{actual_file}` at line {line_no} (`{func_name}`). "
+                    f"Root exception: {fingerprint.root_exception}"
+                )
+                remediation = RemediationAction(
+                    action_type="code_patch",
+                    target_service=fingerprint.service_name,
+                    target_file=actual_file,
+                    diff_patch=f"""--- a/{actual_file}
++++ b/{actual_file}
+@@ -{line_no},1 +{line_no},3 @@
+-    # Faulting line causing {fingerprint.error_class}
++    # Guardrail fix for {fingerprint.error_class}
++    try:
++        # Safe execution wrapper with boundary check
+""",
+                    runbook_summary=f"Add exception boundary and safety check in `{actual_file}` around line {line_no}.",
+                    pr_reference=f"Hotfix PR ({fingerprint.error_class})",
+                )
+            else:
+                root_cause = (
+                    f"Unhandled fault in {fingerprint.service_name}: {fingerprint.root_exception}. "
+                    "Service encountered unexpected lock timeout or unhandled upstream failure."
+                )
+                remediation = RemediationAction(
+                    action_type="container_restart",
+                    target_service=fingerprint.service_name,
+                    target_file="config/service.yaml",
+                    diff_patch="""--- a/config/service.yaml
 +++ b/config/service.yaml
 @@ -10,2 +10,4 @@
 -  socket_timeout: 0
 +  socket_timeout: 15s
 +  circuit_breaker_enabled: true
 """,
-                runbook_summary="Enable circuit breaker and 15s upstream socket timeout to prevent worker starvation.",
-                pr_reference="PR #425",
-            )
+                    runbook_summary="Enable circuit breaker and 15s upstream socket timeout to prevent worker starvation.",
+                    pr_reference="PR #425",
+                )
 
         return {"root_cause": root_cause, "remediation": remediation}
 

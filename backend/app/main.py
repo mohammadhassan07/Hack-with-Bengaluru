@@ -19,6 +19,8 @@ from app.target_simulator.mock_cluster import cluster
 from app.target_simulator.chaos_scenarios import CHAOS_CATALOG
 from app.agents.orchestrator import orchestrator
 from app.services.event_bus import event_bus
+from app.services.github_service import github_service
+from app.services.integrations_service import integrations_service
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
 logger = logging.getLogger("memops.server")
@@ -169,6 +171,73 @@ async def get_memory_records():
 async def get_memory_stats():
     """Get Hindsight memory performance and MTTR reduction statistics."""
     return hindsight.get_stats()
+
+
+# --- GitHub Live Integration Endpoints ---
+
+@app.post("/api/v1/github/connect")
+async def connect_github_repo(request: Request):
+    """Connect a GitHub repository to stream live issues, errors, and metadata."""
+    payload = await request.json()
+    repo = payload.get("repo", "mohammadhassan07/Hack-with-Bengaluru")
+    token = payload.get("token")
+    result = await github_service.connect(repo=repo, token=token)
+    return result
+
+
+@app.get("/api/v1/github/status")
+async def get_github_status():
+    """Get status of the connected GitHub repository."""
+    return github_service.get_status()
+
+
+@app.get("/api/v1/github/issues")
+async def get_github_issues():
+    """Get monitored issues and error reports from the connected repository."""
+    return github_service.get_issues()
+
+
+@app.post("/api/v1/github/triage/{issue_number}")
+async def triage_github_issue(issue_number: int):
+    """Trigger SRE ingestion and autonomous remediation on a GitHub issue."""
+    try:
+        result = await github_service.triage_issue(issue_number)
+        return result
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+
+@app.post("/api/v1/github/create-issue")
+async def create_github_issue(request: Request):
+    """Simulate or report an incident issue on the repository."""
+    payload = await request.json()
+    title = payload.get("title", "[OUTAGE] Microservice Connection Failure")
+    service_name = payload.get("service_name", "postgres-db")
+    error_log = payload.get("error_log", "Connection pool exhaustion detected.")
+    result = await github_service.create_issue_simulation(title, service_name, error_log)
+    return result
+
+
+@app.get("/api/v1/integrations/status")
+async def get_integrations_status():
+    """Get honest connectivity status of external tools (Docker, K8s, APM, GitHub)."""
+    return integrations_service.check_all_tools(github_service.repo)
+
+
+@app.post("/api/v1/incidents/analyze-raw-log")
+async def analyze_raw_log(request: Request):
+    """Analyze real user-pasted log/stacktrace without fake mock data."""
+    payload = await request.json()
+    raw_log = payload.get("raw_log", "").strip()
+    service_name = payload.get("service_name")
+    if not raw_log:
+        raise HTTPException(status_code=400, detail="Empty log content provided.")
+    
+    result = await orchestrator.ingest_and_triage(
+        raw_log=raw_log,
+        service_name=service_name,
+    )
+    return {"status": "triaged", "triage_result": result.model_dump()}
 
 
 # Mount frontend static files if folder exists

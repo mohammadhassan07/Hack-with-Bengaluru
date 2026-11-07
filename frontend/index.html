@@ -43,7 +43,6 @@
   <script src="https://unpkg.com/lucide@latest"></script>
 
   <style>
-    /* Clean custom scrollbar */
     ::-webkit-scrollbar {
       width: 6px;
       height: 6px;
@@ -66,7 +65,7 @@
   <header class="border-b border-slate-200/80 dark:border-slate-800/80 bg-white/95 dark:bg-[#0f1422]/95 backdrop-blur sticky top-0 z-40">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-12 flex items-center justify-between">
       
-      <!-- Brand & Single-line Navigation -->
+      <!-- Brand & Navigation -->
       <div class="flex items-center gap-5">
         <a class="flex items-center gap-2 group" href="/">
           <div class="h-7 w-7 rounded-lg bg-blue-600 flex items-center justify-center text-white shadow-sm shadow-blue-500/20 group-hover:bg-blue-700 transition">
@@ -75,26 +74,33 @@
           <span class="font-bold text-slate-900 dark:text-white tracking-tight text-sm">MemOps <span class="text-blue-600 dark:text-blue-400">SRE</span></span>
         </a>
 
-        <!-- Divider -->
         <div class="h-4 w-[1px] bg-slate-200 dark:border-slate-800 hidden sm:block"></div>
 
-        <!-- Single-line compact navigation -->
         <nav class="hidden sm:flex items-center gap-1">
           <a class="px-2.5 py-1 rounded-md text-xs font-medium bg-slate-100 dark:bg-slate-800 text-blue-600 dark:text-blue-400 transition" href="#">Overview</a>
           <a class="px-2.5 py-1 rounded-md text-xs font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/60 transition" href="#three-mesh-card">3D Mesh</a>
+          <a class="px-2.5 py-1 rounded-md text-xs font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/60 transition" href="#real-log-analyzer-section">Log Analyzer</a>
           <a class="px-2.5 py-1 rounded-md text-xs font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/60 transition" href="#terminal-section">Audit Log</a>
         </nav>
       </div>
 
-      <!-- Right Header Status Indicator & Theme Toggle -->
+      <!-- Right Header Status Indicator, Connected Repo & Theme Toggle -->
       <div class="flex items-center gap-2.5">
+        
+        <!-- Live GitHub Repository Pill Button -->
+        <button id="btn-github-modal" class="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700/60 transition cursor-pointer" onclick="openGitHubModal()" title="Manage Connected GitHub Repository">
+          <i class="w-3.5 h-3.5 text-slate-900 dark:text-white" data-lucide="github"></i>
+          <span id="header-repo-label" class="font-mono text-[11px] max-w-[130px] sm:max-w-[190px] truncate">mohammadhassan07/Hack-with-Bengaluru</span>
+          <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 flex-shrink-0" id="github-sync-dot"></span>
+        </button>
+
         <!-- Live System Status Pill -->
         <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-900/60 text-emerald-700 dark:text-emerald-300 text-xs font-medium transition-all" id="header-status-pill">
           <span class="w-1.5 h-1.5 rounded-full bg-emerald-500" id="header-status-dot"></span>
           <span id="header-status-text" class="text-[11px]">All Systems Healthy</span>
         </div>
 
-        <!-- Theme Toggle (Light / Dark) -->
+        <!-- Theme Toggle -->
         <button aria-label="Toggle Dark and Light Mode" class="p-1.5 rounded-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition shadow-sm cursor-pointer" id="theme-toggle" title="Toggle theme">
           <i class="w-3.5 h-3.5 hidden dark:inline-block" data-lucide="moon"></i>
           <i class="w-3.5 h-3.5 inline-block dark:hidden text-amber-500" data-lucide="sun"></i>
@@ -105,9 +111,9 @@
   </header>
 
   <!-- MAIN WRAPPER -->
-  <main class="flex-1 max-w-7xl w-full mx-auto px-6 lg:px-8 py-8 space-y-8">
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-7 space-y-7">
 
-    <!-- GLOBAL RESOLUTION SUCCESS TOAST / BANNER -->
+    <!-- SUCCESS TOAST BANNER -->
     <div class="hidden rounded-xl border border-emerald-300 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/40 p-5 flex items-start justify-between gap-4 transition-all duration-300 shadow-sm" id="success-banner">
       <div class="flex items-start gap-3.5">
         <div class="p-2 rounded-lg bg-emerald-600 text-white mt-0.5 shadow-sm">
@@ -115,7 +121,7 @@
         </div>
         <div>
           <h3 class="text-sm font-semibold text-emerald-900 dark:text-emerald-200" id="success-banner-title">Fix verified &amp; deployed successfully!</h3>
-          <p class="text-xs text-emerald-700 dark:text-emerald-300/90 mt-0.5 leading-relaxed" id="success-banner-desc">Target microservice has returned to nominal latency. Solution permanently cataloged into persistent Hindsight memory.</p>
+          <p class="text-xs text-emerald-700 dark:text-emerald-300/90 mt-0.5 leading-relaxed" id="success-banner-desc">Target microservice restored. Solution cataloged into persistent Hindsight memory.</p>
         </div>
       </div>
       <button class="text-emerald-600 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-200 text-xs font-semibold px-2 py-1 rounded cursor-pointer" onclick="dismissSuccessBanner()">
@@ -123,11 +129,85 @@
       </button>
     </div>
 
-    <!-- 1. TOP SUMMARY METRICS (4 Spacious KPI Cards) -->
-    <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+    <!-- 0. TOP STARTING HERO: CONNECT ANY GITHUB REPOSITORY -->
+    <section class="bg-gradient-to-r from-slate-900 via-[#111728] to-slate-900 text-white rounded-2xl p-6 sm:p-7 border border-slate-800/90 shadow-xl shadow-blue-500/5 relative overflow-hidden">
+      <div class="absolute -top-12 -right-12 w-72 h-72 bg-blue-600/10 rounded-full blur-3xl pointer-events-none"></div>
+
+      <div class="max-w-3xl space-y-3.5 relative z-10">
+        <div class="flex items-center gap-2">
+          <span class="px-2.5 py-0.5 rounded-full text-[11px] font-semibold uppercase tracking-wider bg-blue-500/20 text-blue-400 border border-blue-500/30 flex items-center gap-1">
+            <i class="w-3 h-3" data-lucide="sparkles"></i>
+            <span>Autonomous SRE Repo Inspector</span>
+          </span>
+          <span class="text-xs text-slate-400 font-mono hidden sm:inline">&bull; Real-time RCA &amp; 3D Topology Analysis</span>
+        </div>
+
+        <div>
+          <h1 class="text-xl sm:text-2xl font-bold tracking-tight text-white">
+            Analyze Any GitHub Repository for Production Outages
+          </h1>
+          <p class="text-xs sm:text-sm text-slate-400 mt-1 leading-relaxed">
+            Enter any public or private GitHub repository link. MemOps checks real open issues, inspects commit history, identifies real stacktraces, and creates hotfix PR diffs without random mock data.
+          </p>
+        </div>
+
+        <!-- Input Bar -->
+        <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 pt-1">
+          <div class="relative flex-1">
+            <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+              <i class="w-4 h-4" data-lucide="github"></i>
+            </div>
+            <input 
+              type="text" 
+              id="hero-repo-input" 
+              placeholder="e.g. https://github.com/mohammadhassan07/Hack-with-Bengaluru or tiangolo/fastapi"
+              value="mohammadhassan07/Hack-with-Bengaluru"
+              class="w-full pl-10 pr-4 py-3 text-xs sm:text-sm font-mono rounded-xl border border-slate-700/80 bg-slate-950/80 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 transition shadow-inner"
+            />
+          </div>
+          <button 
+            id="btn-hero-analyze" 
+            onclick="analyzeHeroRepo()" 
+            class="px-5 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs sm:text-sm transition shadow-lg shadow-blue-600/30 flex items-center justify-center gap-2 cursor-pointer flex-shrink-0"
+          >
+            <i class="w-4 h-4" data-lucide="search-check"></i>
+            <span>Analyze &amp; Inspect Outages</span>
+          </button>
+        </div>
+
+        <!-- Quick Presets -->
+        <div class="flex flex-wrap items-center gap-2 text-xs text-slate-400 pt-0.5">
+          <span class="text-[11px] text-slate-500 font-medium">Quick Presets:</span>
+          <button class="px-2.5 py-1 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-slate-300 font-mono text-[11px] border border-slate-700/60 transition cursor-pointer" onclick="quickSelectRepo('mohammadhassan07/Hack-with-Bengaluru')">mohammadhassan07/Hack-with-Bengaluru</button>
+          <button class="px-2.5 py-1 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-slate-300 font-mono text-[11px] border border-slate-700/60 transition cursor-pointer" onclick="quickSelectRepo('tiangolo/fastapi')">tiangolo/fastapi</button>
+          <button class="px-2.5 py-1 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-slate-300 font-mono text-[11px] border border-slate-700/60 transition cursor-pointer" onclick="quickSelectRepo('pallets/flask')">pallets/flask</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- 1. HONEST TOOL INTEGRATIONS STATUS (Shows connected vs NOT connected explicitly) -->
+    <section class="bg-white dark:bg-[#111726] rounded-2xl border border-slate-200/90 dark:border-slate-800/90 p-5 shadow-sm space-y-3">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <i class="w-4 h-4 text-blue-500" data-lucide="cable"></i>
+          <h2 class="text-xs uppercase tracking-wider font-semibold text-slate-900 dark:text-slate-200">
+            External Tool &amp; Platform Integrations Status
+          </h2>
+        </div>
+        <span class="text-[11px] text-slate-400">Honest Connectivity Check</span>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3" id="integrations-strip">
+        <!-- Populated dynamically via fetchIntegrationsStatus -->
+        <div class="p-3 text-xs text-slate-400">Checking tool connections...</div>
+      </div>
+    </section>
+
+    <!-- 2. TOP SUMMARY METRICS (4 KPI Cards) -->
+    <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
       
       <!-- Card 1: System Health -->
-      <div class="bg-white dark:bg-[#111726] rounded-xl border border-slate-200/90 dark:border-slate-800/90 p-6 shadow-sm flex flex-col justify-between transition-all hover:border-slate-300 dark:hover:border-slate-700">
+      <div class="bg-white dark:bg-[#111726] rounded-xl border border-slate-200/90 dark:border-slate-800/90 p-5 shadow-sm flex flex-col justify-between transition-all hover:border-slate-300 dark:hover:border-slate-700">
         <div class="flex items-center justify-between text-slate-500 dark:text-slate-400">
           <span class="text-xs font-semibold uppercase tracking-wider">System Health</span>
           <span class="p-2 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
@@ -137,13 +217,13 @@
         <div class="mt-4">
           <div class="text-2xl font-bold text-emerald-600 dark:text-emerald-400 tracking-tight" id="kpi-health-value">100% Healthy</div>
           <div class="flex items-center gap-1.5 mt-1.5 text-xs text-slate-500 dark:text-slate-400" id="kpi-health-sub">
-            All 6 microservices nominal
+            All microservices nominal
           </div>
         </div>
       </div>
 
       <!-- Card 2: Active Alerts -->
-      <div class="bg-white dark:bg-[#111726] rounded-xl border border-slate-200/90 dark:border-slate-800/90 p-6 shadow-sm flex flex-col justify-between transition-all hover:border-slate-300 dark:hover:border-slate-700">
+      <div class="bg-white dark:bg-[#111726] rounded-xl border border-slate-200/90 dark:border-slate-800/90 p-5 shadow-sm flex flex-col justify-between transition-all hover:border-slate-300 dark:hover:border-slate-700">
         <div class="flex items-center justify-between text-slate-500 dark:text-slate-400">
           <span class="text-xs font-semibold uppercase tracking-wider">Active Outages</span>
           <span class="p-2 rounded-lg bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400">
@@ -159,7 +239,7 @@
       </div>
 
       <!-- Card 3: Hindsight Memory Bank -->
-      <div class="bg-white dark:bg-[#111726] rounded-xl border border-slate-200/90 dark:border-slate-800/90 p-6 shadow-sm flex flex-col justify-between transition-all hover:border-slate-300 dark:hover:border-slate-700">
+      <div class="bg-white dark:bg-[#111726] rounded-xl border border-slate-200/90 dark:border-slate-800/90 p-5 shadow-sm flex flex-col justify-between transition-all hover:border-slate-300 dark:hover:border-slate-700">
         <div class="flex items-center justify-between text-slate-500 dark:text-slate-400">
           <span class="text-xs font-semibold uppercase tracking-wider">Hindsight Memory</span>
           <span class="p-2 rounded-lg bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400">
@@ -175,7 +255,7 @@
       </div>
 
       <!-- Card 4: MTTR Saved -->
-      <div class="bg-white dark:bg-[#111726] rounded-xl border border-slate-200/90 dark:border-slate-800/90 p-6 shadow-sm flex flex-col justify-between transition-all hover:border-slate-300 dark:hover:border-slate-700">
+      <div class="bg-white dark:bg-[#111726] rounded-xl border border-slate-200/90 dark:border-slate-800/90 p-5 shadow-sm flex flex-col justify-between transition-all hover:border-slate-300 dark:hover:border-slate-700">
         <div class="flex items-center justify-between text-slate-500 dark:text-slate-400">
           <span class="text-xs font-semibold uppercase tracking-wider">MTTR Saved</span>
           <span class="p-2 rounded-lg bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400">
@@ -192,87 +272,119 @@
 
     </section>
 
-    <!-- 2. DIAGNOSTIC CHAOS PLAYGROUND (Non-congested, intuitive action bar) -->
-    <section class="bg-white dark:bg-[#111726] rounded-2xl border border-slate-200/90 dark:border-slate-800/90 p-6 shadow-sm">
-      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+    <!-- 3. REAL LOG & STACKTRACE ANALYZER (Direct Diagnosis of Real Errors) -->
+    <section class="bg-white dark:bg-[#111726] rounded-2xl border border-slate-200/90 dark:border-slate-800/90 p-6 shadow-sm space-y-4" id="real-log-analyzer-section">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 dark:border-slate-800/80 pb-3">
         <div>
-          <h2 class="text-sm uppercase tracking-wider font-semibold text-slate-900 dark:text-slate-200 flex items-center gap-2">
-            <i class="w-4 h-4 text-purple-500" data-lucide="flask-conical"></i>
-            Diagnostic Fault Injection Playground
-          </h2>
+          <div class="flex items-center gap-2">
+            <i class="w-4 h-4 text-rose-500" data-lucide="file-warning"></i>
+            <h2 class="text-sm uppercase tracking-wider font-semibold text-slate-900 dark:text-slate-200">
+              Live Log &amp; Stacktrace Analyzer
+            </h2>
+            <span class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300">
+              Zero Fake Data
+            </span>
+          </div>
           <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-            Inject realistic production anomalies into the sandboxed cluster to evaluate Hindsight vector recall and auto-patching.
+            Paste any real exception, assertion error, or crash log from your project. MemOps extracts the exact file, line, and exception class.
           </p>
         </div>
-        <span class="text-[11px] font-mono px-2.5 py-1 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 self-start sm:self-auto">
-          Target: Sandbox Cluster
-        </span>
+
+        <div class="flex items-center gap-1.5 self-start sm:self-auto flex-wrap">
+          <span class="text-[11px] text-slate-400">Sample Real Traces:</span>
+          <button class="px-2 py-1 rounded bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-[11px] font-mono text-slate-700 dark:text-slate-300 transition cursor-pointer" onclick="loadSampleRealTrace('assertion')">
+            AssertionError
+          </button>
+          <button class="px-2 py-1 rounded bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-[11px] font-mono text-slate-700 dark:text-slate-300 transition cursor-pointer" onclick="loadSampleRealTrace('db_pool')">
+            DB Connection Leak
+          </button>
+          <button class="px-2 py-1 rounded bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-[11px] font-mono text-slate-700 dark:text-slate-300 transition cursor-pointer" onclick="loadSampleRealTrace('docker_oom')">
+            Docker OOM 137
+          </button>
+        </div>
       </div>
 
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-        <!-- Scenario 1: Postgres -->
-        <button class="px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/60 hover:bg-rose-50 dark:hover:bg-rose-950/40 hover:border-rose-300 dark:hover:border-rose-800 text-left transition group cursor-pointer" onclick="triggerChaos('postgres_pool_exhaustion')">
-          <div class="flex items-center gap-2 text-rose-600 dark:text-rose-400 text-xs font-semibold">
-            <i class="w-3.5 h-3.5" data-lucide="flame"></i>
-            <span>Postgres Pool Leak</span>
-          </div>
-          <div class="text-[11px] text-slate-500 dark:text-slate-400 mt-1">Tests exact Hindsight recall (Oct 12 incident)</div>
-        </button>
+      <div class="space-y-3">
+        <textarea 
+          id="custom-log-input" 
+          rows="4" 
+          placeholder="Paste real traceback or terminal error log here... e.g.:&#10;Traceback (most recent call last):&#10;  File &quot;services/auth.py&quot;, line 54, in verify_jwt&#10;    raise InvalidSignatureError(&quot;Signature verification failed&quot;)&#10;jwt.exceptions.InvalidSignatureError: Signature verification failed"
+          class="w-full p-3.5 text-xs font-mono rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+        ></textarea>
 
-        <!-- Scenario 2: Docker OOM -->
-        <button class="px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/60 hover:bg-amber-50 dark:hover:bg-amber-950/40 hover:border-amber-300 dark:hover:border-amber-800 text-left transition group cursor-pointer" onclick="triggerChaos('docker_oom_leak')">
-          <div class="flex items-center gap-2 text-amber-600 dark:text-amber-400 text-xs font-semibold">
-            <i class="w-3.5 h-3.5" data-lucide="cpu"></i>
-            <span>Order Svc Docker OOM</span>
-          </div>
-          <div class="text-[11px] text-slate-500 dark:text-slate-400 mt-1">Simulates exit code 137 heap blowup</div>
-        </button>
-
-        <!-- Scenario 3: Bad Deploy -->
-        <button class="px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/60 hover:bg-blue-50 dark:hover:bg-blue-950/40 hover:border-blue-300 dark:hover:border-blue-800 text-left transition group cursor-pointer" onclick="triggerChaos('bad_staging_deploy')">
-          <div class="flex items-center gap-2 text-blue-600 dark:text-blue-400 text-xs font-semibold">
-            <i class="w-3.5 h-3.5" data-lucide="git-pull-request"></i>
-            <span>Bad Staging Deploy</span>
-          </div>
-          <div class="text-[11px] text-slate-500 dark:text-slate-400 mt-1">Tests novel incident RCA synthesis</div>
-        </button>
-
-        <!-- Reset Cluster -->
-        <button class="px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/60 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 hover:border-emerald-300 dark:hover:border-emerald-800 text-left transition group cursor-pointer" onclick="resetCluster()">
-          <div class="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 text-xs font-semibold">
-            <i class="w-3.5 h-3.5" data-lucide="refresh-cw"></i>
-            <span>Restore All Services</span>
-          </div>
-          <div class="text-[11px] text-slate-500 dark:text-slate-400 mt-1">Reset all 6 nodes to healthy baseline</div>
-        </button>
+        <div class="flex items-center justify-between">
+          <span class="text-[11px] text-slate-400 font-mono">
+            MemOps will parse the real error class, line number, and synthesize a file-specific hotfix diff.
+          </span>
+          <button 
+            id="btn-analyze-log" 
+            onclick="submitRawLogAnalysis()" 
+            class="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs transition shadow-sm shadow-blue-500/20 flex items-center gap-1.5 cursor-pointer"
+          >
+            <i class="w-4 h-4" data-lucide="search-code"></i>
+            <span>Diagnose Real Log</span>
+          </button>
+        </div>
       </div>
     </section>
 
-    <!-- 3. MAIN WORKSPACE GRID (Left: Triage & RCA, Right: 3D Mesh & Health) -->
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+    <!-- 4. GITHUB REPOSITORY ERROR RADAR -->
+    <section class="bg-white dark:bg-[#111726] rounded-2xl border border-slate-200/90 dark:border-slate-800/90 p-6 shadow-sm" id="github-radar-section">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+        <div>
+          <div class="flex items-center gap-2">
+            <i class="w-4 h-4 text-slate-900 dark:text-white" data-lucide="github"></i>
+            <h2 class="text-sm uppercase tracking-wider font-semibold text-slate-900 dark:text-slate-200">
+              Live GitHub Repository Issues &amp; Commits
+            </h2>
+            <span class="text-[11px] font-mono px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 font-medium" id="github-issue-count">
+              Checking...
+            </span>
+          </div>
+          <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
+            Tracking <span class="font-mono text-slate-700 dark:text-slate-300 font-semibold" id="radar-repo-name">mohammadhassan07/Hack-with-Bengaluru</span> (<span id="radar-repo-branch" class="font-mono">main</span>). Real issues and commits are rendered with zero mock fallbacks.
+          </p>
+        </div>
 
-      <!-- LEFT COLUMN: Incident Triage & Live Logs (lg:col-span-7 xl:col-span-7) -->
+        <button class="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-200 transition flex items-center gap-1.5 cursor-pointer self-start sm:self-auto" onclick="openGitHubModal()">
+          <i class="w-3.5 h-3.5 text-blue-500" data-lucide="settings"></i>
+          <span>Configure Repo</span>
+        </button>
+      </div>
+
+      <!-- Real Issues Container -->
+      <div class="space-y-3" id="github-issues-list">
+        <div class="py-4 text-center text-xs text-slate-400">Loading GitHub data...</div>
+      </div>
+
+      <!-- Recent Real Commits from GitHub -->
+      <div class="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800/80">
+        <div class="text-[11px] font-semibold uppercase tracking-wider text-slate-400 mb-2">Recent Repository Commits (Live from GitHub API):</div>
+        <div class="space-y-1" id="recent-commits-list">
+          <div class="text-xs text-slate-400 py-1">Loading commits...</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5. MAIN WORKSPACE GRID (Left: Triage & RCA, Right: 3D Mesh & Health) -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-7 items-start">
+
+      <!-- LEFT COLUMN: Incident Triage & Live Logs (lg:col-span-7) -->
       <div class="lg:col-span-7 space-y-6">
         
         <!-- Active Incident / Triage Card -->
         <div class="bg-white dark:bg-[#111726] rounded-2xl border border-slate-200/90 dark:border-slate-800/90 shadow-sm overflow-hidden" id="incident-card-container">
           
           <!-- Healthy State Box (Shown when cluster is healthy) -->
-          <div class="p-8 sm:p-12 text-center space-y-4" id="healthy-state-box">
-            <div class="inline-flex p-4 rounded-2xl bg-emerald-100 dark:bg-emerald-950/80 text-emerald-600 dark:text-emerald-400 shadow-sm shadow-emerald-500/10">
-              <i class="w-8 h-8" data-lucide="shield-check"></i>
+          <div class="p-8 sm:p-11 text-center space-y-4" id="healthy-state-box">
+            <div class="inline-flex p-3.5 rounded-2xl bg-emerald-100 dark:bg-emerald-950/80 text-emerald-600 dark:text-emerald-400 shadow-sm shadow-emerald-500/10">
+              <i class="w-7 h-7" data-lucide="shield-check"></i>
             </div>
             <div>
-              <h3 class="text-lg font-bold text-slate-900 dark:text-white">All Microservices Operational</h3>
+              <h3 class="text-base sm:text-lg font-bold text-slate-900 dark:text-white">All Microservices Operational</h3>
               <p class="text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto mt-1 leading-relaxed">
-                Zero active alerts requiring operator attention. MemOps is streaming telemetry and ready to match novel or recurring outages against Hindsight memory.
+                Zero active alerts requiring operator attention. Paste any real stacktrace in the <strong>Live Log Analyzer</strong> above to see instant root cause analysis.
               </p>
-            </div>
-            <div class="pt-2">
-              <button class="inline-flex items-center gap-2 text-xs font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 hover:underline cursor-pointer" onclick="triggerChaos('postgres_pool_exhaustion')">
-                <i class="w-3.5 h-3.5" data-lucide="sparkles"></i>
-                <span>Trigger Postgres Pool Leak to test instant memory recall &rarr;</span>
-              </button>
             </div>
           </div>
 
@@ -280,13 +392,13 @@
           <div class="hidden" id="active-incident-details">
             
             <!-- Card Header -->
-            <div class="p-6 sm:p-7 border-b border-slate-100 dark:border-slate-800/80 bg-slate-50/50 dark:bg-slate-900/30">
+            <div class="p-6 border-b border-slate-100 dark:border-slate-800/80 bg-slate-50/50 dark:bg-slate-900/30">
               <div class="flex flex-wrap items-center justify-between gap-4">
                 <div class="flex items-center gap-2.5">
                   <span class="px-3 py-1 rounded-full text-xs font-semibold bg-rose-100 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-900" id="incident-pill">
                     Outage Detected
                   </span>
-                  <span class="text-xs text-slate-400 dark:text-slate-500">Live SSE Detection</span>
+                  <span class="text-xs text-slate-400 dark:text-slate-500">Live Telemetry Ingestion</span>
                 </div>
                 <div class="flex items-center gap-2">
                   <span class="text-xs text-slate-500 dark:text-slate-400 font-medium">Severity:</span>
@@ -296,16 +408,16 @@
                 </div>
               </div>
 
-              <h1 class="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white mt-3" id="incident-title">
+              <h1 class="text-lg sm:text-xl font-bold text-slate-900 dark:text-white mt-3" id="incident-title">
                 Target service experiencing critical outage
               </h1>
-              <p class="text-xs sm:text-sm text-slate-600 dark:text-slate-400 mt-2 leading-relaxed" id="incident-desc">
+              <p class="text-xs sm:text-sm text-slate-600 dark:text-slate-400 mt-1.5 leading-relaxed" id="incident-desc">
                 Investigating root cause and comparing failure vector with historical incident bank.
               </p>
             </div>
 
             <!-- Card Body -->
-            <div class="p-6 sm:p-7 space-y-6">
+            <div class="p-6 space-y-6">
               
               <!-- Section 1: Hindsight Recall Match Banner -->
               <div class="hidden p-4 rounded-xl border border-amber-300 dark:border-amber-800/80 bg-amber-50/80 dark:bg-amber-950/30 transition-all" id="memory-recall-box">
@@ -329,31 +441,31 @@
 
               <!-- Section 2: Automated RCA Diagnosis -->
               <div>
-                <div class="flex items-center justify-between mb-2.5">
+                <div class="flex items-center justify-between mb-2">
                   <div class="flex items-center gap-2">
                     <div class="p-1 rounded-md bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-400">
-                      <i class="w-4 h-4" data-lucide="search-code"></i>
+                      <i class="w-3.5 h-3.5" data-lucide="search-code"></i>
                     </div>
                     <h2 class="text-xs uppercase tracking-wider font-semibold text-slate-900 dark:text-slate-200">
                       Root Cause Analysis
                     </h2>
                   </div>
-                  <span class="text-xs text-slate-400 font-mono">Telemetry Correlation</span>
+                  <span class="text-[11px] text-slate-400 font-mono">Real Stacktrace Correlation</span>
                 </div>
-                <div class="p-4 rounded-xl bg-slate-50/80 dark:bg-[#0c1220] border border-slate-200/80 dark:border-slate-800 text-xs sm:text-sm text-slate-700 dark:text-slate-300 leading-relaxed" id="incident-rca">
+                <div class="p-4 rounded-xl bg-slate-50/80 dark:bg-[#0c1220] border border-slate-200/80 dark:border-slate-800 text-xs sm:text-sm text-slate-700 dark:text-slate-300 leading-relaxed font-mono" id="incident-rca">
                   Analyzing container telemetry and stacktrace...
                 </div>
               </div>
 
               <!-- Section 3: Hotfix Diff Preview -->
               <div>
-                <div class="flex items-center justify-between mb-2.5">
+                <div class="flex items-center justify-between mb-2">
                   <div class="flex items-center gap-2">
                     <div class="p-1 rounded-md bg-emerald-50 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400">
-                      <i class="w-4 h-4" data-lucide="code-2"></i>
+                      <i class="w-3.5 h-3.5" data-lucide="code-2"></i>
                     </div>
                     <h2 class="text-xs uppercase tracking-wider font-semibold text-slate-900 dark:text-slate-200">
-                      Automated Hotfix Patch
+                      Automated Hotfix Patch (Pull Request)
                     </h2>
                   </div>
                   <span class="text-xs font-mono text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-md border border-slate-200 dark:border-slate-700" id="diff-file">
@@ -374,12 +486,12 @@
               </div>
 
               <!-- Section 4: Action Panel -->
-              <div class="pt-2 flex flex-col sm:flex-row items-center gap-3">
-                <button class="w-full sm:w-auto flex-1 py-3.5 px-6 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm transition shadow-sm shadow-blue-600/30 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50" id="btn-approve" onclick="approveIncident()">
+              <div class="pt-1 flex flex-col sm:flex-row items-center gap-3">
+                <button class="w-full sm:w-auto flex-1 py-3 px-5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs sm:text-sm transition shadow-sm shadow-blue-600/30 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50" id="btn-approve" onclick="approveIncident()">
                   <i class="w-4 h-4" data-lucide="git-merge"></i>
-                  <span>Approve &amp; Deploy Hotfix</span>
+                  <span>Approve &amp; Deploy Hotfix (PR to GitHub)</span>
                 </button>
-                <button class="w-full sm:w-auto py-3.5 px-5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 font-medium text-sm transition flex items-center justify-center gap-2 cursor-pointer" id="btn-reject" onclick="rejectIncident()">
+                <button class="w-full sm:w-auto py-3 px-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 font-medium text-xs sm:text-sm transition flex items-center justify-center gap-2 cursor-pointer" id="btn-reject" onclick="rejectIncident()">
                   <i class="w-4 h-4 text-slate-400" data-lucide="bell-off"></i>
                   <span>Dismiss / Snooze</span>
                 </button>
@@ -406,14 +518,14 @@
           </div>
           <div class="h-44 overflow-y-auto rounded-xl bg-slate-950 p-3.5 border border-slate-900 shadow-inner" id="terminal-logs">
             <div class="font-mono text-xs text-blue-400 py-0.5">
-              <span class="text-slate-500 mr-2">[SYSTEM]</span>MemOps SRE Engine online. Listening to Kafka/SSE bus...
+              <span class="text-slate-500 mr-2">[SYSTEM]</span>MemOps SRE Engine online. Honest telemetry active.
             </div>
           </div>
         </div>
 
       </div>
 
-      <!-- RIGHT COLUMN: 3D Microservice Mesh, Services & Memory Bank (lg:col-span-5 xl:col-span-5) -->
+      <!-- RIGHT COLUMN: 3D Microservice Mesh, Services & Memory Bank (lg:col-span-5) -->
       <div class="lg:col-span-5 space-y-6">
 
         <!-- 1. 3D Microservice Mesh Topology (Interactive Three.js Canvas) -->
@@ -431,7 +543,6 @@
               </div>
             </div>
 
-            <!-- Controls (Auto-rotate toggle & Reset camera) -->
             <div class="flex items-center gap-1.5">
               <button class="p-1.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition cursor-pointer text-xs flex items-center gap-1" id="btn-toggle-rotate" title="Toggle Auto-Rotation">
                 <i class="w-3.5 h-3.5" data-lucide="rotate-cw"></i>
@@ -448,7 +559,6 @@
           <div class="relative w-full h-[320px] rounded-xl overflow-hidden bg-slate-950/90 border border-slate-800/80 shadow-inner" id="three-wrapper">
             <div class="w-full h-full" id="three-container"></div>
             
-            <!-- Canvas Overlay Legend -->
             <div class="absolute bottom-2 left-2 right-2 flex flex-wrap items-center justify-between gap-2 text-[10px] text-slate-300 bg-slate-950/80 backdrop-blur px-3 py-1.5 rounded-lg border border-slate-800/70">
               <div class="flex items-center gap-3">
                 <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-emerald-500"></span>Healthy</span>
@@ -461,8 +571,8 @@
         </div>
 
         <!-- 2. Monitored Microservices Table -->
-        <div class="bg-white dark:bg-[#111726] rounded-2xl border border-slate-200/90 dark:border-slate-800/90 p-6 shadow-sm">
-          <div class="flex items-center justify-between mb-4">
+        <div class="bg-white dark:bg-[#111726] rounded-2xl border border-slate-200/90 dark:border-slate-800/90 p-5 shadow-sm">
+          <div class="flex items-center justify-between mb-3">
             <h2 class="text-xs uppercase tracking-wider font-semibold text-slate-900 dark:text-slate-200 flex items-center gap-2">
               <i class="w-4 h-4 text-blue-500" data-lucide="server"></i>
               Monitored Microservices
@@ -471,14 +581,13 @@
           </div>
 
           <div class="divide-y divide-slate-100 dark:divide-slate-800/80" id="services-list">
-            <!-- Dynamic Services List populated by app.js -->
             <div class="py-3 text-xs text-slate-400">Loading topology...</div>
           </div>
         </div>
 
         <!-- 3. Hindsight Memory Bank -->
-        <div class="bg-white dark:bg-[#111726] rounded-2xl border border-slate-200/90 dark:border-slate-800/90 p-6 shadow-sm">
-          <div class="flex items-center justify-between mb-4">
+        <div class="bg-white dark:bg-[#111726] rounded-2xl border border-slate-200/90 dark:border-slate-800/90 p-5 shadow-sm">
+          <div class="flex items-center justify-between mb-3">
             <h2 class="text-xs uppercase tracking-wider font-semibold text-slate-900 dark:text-slate-200 flex items-center gap-2">
               <i class="w-4 h-4 text-amber-500" data-lucide="database"></i>
               Hindsight Memory Bank
@@ -487,7 +596,6 @@
           </div>
 
           <div class="space-y-3" id="memory-feed">
-            <!-- Dynamic Memory Records populated by app.js -->
             <div class="py-3 text-xs text-slate-400">Loading memory records...</div>
           </div>
         </div>
@@ -498,7 +606,55 @@
 
   </main>
 
-  <!-- Application Logic Scripts -->
+  <!-- GITHUB MODAL -->
+  <div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 backdrop-blur-sm hidden" id="github-modal">
+    <div class="bg-white dark:bg-[#111726] border border-slate-200 dark:border-slate-800 rounded-2xl max-w-lg w-full mx-4 p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in-95 duration-150">
+      
+      <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800/80 pb-4">
+        <div class="flex items-center gap-2.5">
+          <div class="h-9 w-9 rounded-xl bg-slate-900 text-white flex items-center justify-center">
+            <i class="w-5 h-5" data-lucide="github"></i>
+          </div>
+          <div>
+            <h3 class="text-base font-bold text-slate-900 dark:text-white">Configure GitHub Repository</h3>
+            <p class="text-xs text-slate-500 dark:text-slate-400">Honest live connection to GitHub API</p>
+          </div>
+        </div>
+        <button class="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer" onclick="closeGitHubModal()">
+          <i class="w-5 h-5" data-lucide="x"></i>
+        </button>
+      </div>
+
+      <div class="space-y-4">
+        <div>
+          <label class="block text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">
+            Repository URL or Name (owner/repo)
+          </label>
+          <input type="text" id="github-repo-input" value="mohammadhassan07/Hack-with-Bengaluru" class="w-full px-3.5 py-2.5 text-xs font-mono rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="e.g. mohammadhassan07/Hack-with-Bengaluru">
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">
+            Personal Access Token (PAT) <span class="text-slate-400 lowercase font-normal">(Optional for public repos)</span>
+          </label>
+          <input type="password" id="github-token-input" class="w-full px-3.5 py-2.5 text-xs font-mono rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="ghp_... for private repositories or increased rate limits">
+        </div>
+      </div>
+
+      <div class="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100 dark:border-slate-800/80">
+        <button class="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer" onclick="closeGitHubModal()">
+          Cancel
+        </button>
+        <button class="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer shadow-sm shadow-blue-500/20" id="btn-connect-repo" onclick="connectGitHubRepo()">
+          <i class="w-3.5 h-3.5" data-lucide="git-merge"></i>
+          <span>Save &amp; Connect</span>
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Scripts -->
   <script src="/static/visualizer3d.js"></script>
   <script src="/static/app.js"></script>
 </body>

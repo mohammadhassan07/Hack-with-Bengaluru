@@ -88,12 +88,13 @@ Raw log:
         elif "payment" in raw_log.lower() or "gateway timeout" in raw_log.lower():
             svc = service_name or "payment-service"
 
-        # Detect error class
+        # Detect error class dynamically from real stacktrace
         error_class = "SystemFault"
-        if "OperationalError" in raw_log:
-            error_class = "OperationalError"
-        elif "TimeoutError" in raw_log:
-            error_class = "TimeoutError"
+        err_match = re.search(r'([A-Za-z0-9_.]*(?:Error|Exception|Fault|Fatal|Failure|Killed))(?::\s*(.*))?', raw_log)
+        if err_match:
+            raw_err = err_match.group(1).split(".")[-1]
+            if raw_err:
+                error_class = raw_err
         elif "oom-kill" in raw_log.lower() or "status 137" in raw_log:
             error_class = "ContainerOOMKilled"
         elif "deadlock" in raw_log.lower():
